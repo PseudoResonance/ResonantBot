@@ -2,9 +2,9 @@ package com.github.pseudoresonance.resonantbot;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 
 import javax.json.Json;
 import javax.json.JsonException;
@@ -12,6 +12,8 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonWriter;
+
+import com.github.pseudoresonance.resonantbot.listeners.MessageListener;
 
 public class Config {
 	
@@ -39,7 +41,7 @@ public class Config {
 		Config.prefix = prefix;
 	}
 	
-	protected static String getPrefix() {
+	public static String getPrefix() {
 		return prefix;
 	}
 	
@@ -47,11 +49,11 @@ public class Config {
 		Config.name = name;
 	}
 	
-	protected static String getName() {
+	public static String getName() {
 		return name;
 	}
 	
-	protected static void save() {
+	public static void save() {
 		File dir = new File(ResonantBot.getDir(), "data");
 		dir.mkdir();
 		JsonObjectBuilder configBuild = Json.createObjectBuilder();
@@ -65,8 +67,32 @@ public class Config {
 			JsonWriter json = Json.createWriter(os);
 			json.writeObject(config);
 			json.close();
-		} catch (FileNotFoundException e) {
+			os.close();
+		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public static boolean saveData() {
+		File dir = new File(ResonantBot.getDir(), "data");
+		dir.mkdir();
+		JsonObjectBuilder prefixesBuild = Json.createObjectBuilder();
+		HashMap<String, String> prefixes = MessageListener.getPrefixes();
+		for (String p : prefixes.keySet()) {
+			prefixesBuild.add(p, prefixes.get(p));
+		}
+		JsonObject prefix = prefixesBuild.build();
+		File pre = new File(dir, "prefixes.json");
+		try {
+			FileOutputStream os = new FileOutputStream(pre);
+			JsonWriter json = Json.createWriter(os);
+			json.writeObject(prefix);
+			json.close();
+			os.close();
+			return true;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
 		}
 	}
 	
@@ -79,9 +105,34 @@ public class Config {
 				JsonObject config = json.readObject();
 				json.close();
 				fs.close();
+				fs.close();
 				token = config.getString("token");
 				prefix = config.getString("prefix");
 				name = config.getString("name");
+				config = null;
+				conf = null;
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (JsonException e) {
+				return;
+			}
+		}
+		File pre = new File(ResonantBot.getDir() + File.separator + "data", "prefixes.json");
+		if (pre.exists()) {
+			try {
+				FileInputStream fs = new FileInputStream(pre);
+				JsonReader json = Json.createReader(fs);
+				JsonObject prefix = json.readObject();
+				json.close();
+				fs.close();
+				fs.close();
+				HashMap<String, String> prefixes = new HashMap<String, String>();
+				for (String k : prefix.keySet()) {
+					prefixes.put(k, prefix.getString(k));
+				}
+				prefix = null;
+				pre = null;
+				MessageListener.setPrefixes(prefixes);
 			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (JsonException e) {

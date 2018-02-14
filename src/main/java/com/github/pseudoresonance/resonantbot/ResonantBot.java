@@ -7,21 +7,33 @@ import java.util.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.pseudoresonance.resonantbot.listeners.ConnectionListener;
+import com.github.pseudoresonance.resonantbot.listeners.MessageListener;
+import com.github.pseudoresonance.resonantbot.listeners.ReadyListener;
+
 import sx.blah.discord.api.IDiscordClient;
 
 public class ResonantBot {
-	
+
+	private static Logger log = LoggerFactory.getLogger(ResonantBot.class.getName());
+
 	private static HashMap<String, String> args;
 	private static String directory;
-	private static Logger log = LoggerFactory.getLogger(ResonantBot.class.getName());
 	private static IDiscordClient client;
 
 	public static void main(String[] args) {
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			public void run() {
+				ResonantBot.getClient().logout();
+				Config.saveData();
+			}
+		});
 		ResonantBot.args = Startup.parseArgs(args);
 		directory = Startup.init();
 		if (directory == "") {
 			System.exit(0);
 		}
+		log.info("Using directory: " + directory);
 		log.info("Starting up ResonantBot");
 		Config.init();
 		if (!Config.isTokenSet()) {
@@ -52,22 +64,12 @@ public class ResonantBot {
 			Config.save();
 		}
 		new File(directory, "commands").mkdir();
-		JarManager.getJars();
-		JarManager.loadJars();
+		CommandManager.loadJars();
 		client = BotUtils.getBuiltDiscordClient(Config.getToken());
-		client.getDispatcher().registerListener(new EventListen());
+		client.getDispatcher().registerListeners(new MessageListener(), new ReadyListener(), new ConnectionListener());
 		client.login();
-		boolean loop = true;
-		while (loop) {
-			if (client.isLoggedIn()) {
-				loop = false;
-				log.info(Color.BRIGHT_CYAN + "Successfully connected to Discord as " + client.getApplicationName() + "!");
-				log.info(Color.BRIGHT_CYAN + "Use the following link to add me to your guild:\n");
-				log.info("https://discordapp.com/oauth2/authorize?client_id=" + client.getApplicationClientID() + "&scope=bot&permissions=2146958591\n");
-			}
-		}
 	}
-	
+
 	public static String getArg(String arg) {
 		if (args.containsKey(arg)) {
 			return args.get(arg);
@@ -75,17 +77,17 @@ public class ResonantBot {
 			return null;
 		}
 	}
-	
+
 	public static String getDir() {
 		return directory;
 	}
-	
-	public static Logger getLogger() {
-		return log;
-	}
-	
+
 	public static IDiscordClient getClient() {
 		return client;
 	}
-	
+
+	public static Logger getLogger() {
+		return log;
+	}
+
 }

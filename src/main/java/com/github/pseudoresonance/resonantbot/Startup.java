@@ -6,7 +6,7 @@ import java.util.HashMap;
 import org.slf4j.Logger;
 
 public class Startup {
-
+	
 	private static Logger log = ResonantBot.getLogger();
 
 	protected static String init() {

@@ -4,6 +4,10 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedE
 
 public abstract class Command {
 	
-	public abstract void onCommand(MessageReceivedEvent e, String command);
+	public abstract void onCommand(MessageReceivedEvent e, String command, String[] args);
+	
+	public abstract String getDesc();
+	
+	public abstract boolean isHidden();
 
 }

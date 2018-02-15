@@ -11,7 +11,6 @@ import com.github.pseudoresonance.resonantbot.Config;
 
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
-import sx.blah.discord.handle.impl.obj.ReactionEmoji;
 
 public class MessageListener {
 	
@@ -31,7 +30,6 @@ public class MessageListener {
 			}
 		}
 		if (message.startsWith(prefix)) {
-			e.getMessage().addReaction(ReactionEmoji.of("✅"));
 			String command = message.replaceFirst(Pattern.quote(prefix), "");
 			if (!command.equals("")) {
 				String[] parts = command.split(" ");

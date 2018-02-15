@@ -4,7 +4,7 @@
   <groupId>com.github.PseudoResonance</groupId>
   <artifactId>ResonantBot</artifactId>
   <name>ResonantBot</name>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.1-SNAPSHOT</version>
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
     <resources>

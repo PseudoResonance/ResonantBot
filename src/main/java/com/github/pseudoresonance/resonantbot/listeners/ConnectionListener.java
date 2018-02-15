@@ -6,7 +6,6 @@ import com.github.pseudoresonance.resonantbot.ResonantBot;
 
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.shard.DisconnectedEvent;
-import sx.blah.discord.handle.impl.events.shard.DisconnectedEvent.Reason;
 import sx.blah.discord.handle.impl.events.shard.ReconnectFailureEvent;
 import sx.blah.discord.handle.impl.events.shard.ReconnectSuccessEvent;
 
@@ -17,10 +16,8 @@ public class ConnectionListener {
 	@EventSubscriber
 	public void onDisconnect(DisconnectedEvent e) {
 		log.warn("Disconnected from Discord for reason: " + e.getReason());
-		if (e.getReason() != Reason.LOGGED_OUT) {
-			log.info("Attempting to login.");
-			e.getShard().login();
-		}
+		log.info("Attempting to login.");
+		e.getShard().login();
 	}
 
 	@EventSubscriber

@@ -3,7 +3,9 @@ package com.github.pseudoresonance.resonantbot;
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
+import sx.blah.discord.handle.obj.ActivityType;
 import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.StatusType;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.RateLimitException;
 import sx.blah.discord.util.RequestBuffer;
@@ -16,7 +18,7 @@ public class BotUtils {
 		// The ClientBuilder object is where you will attach your params for
 		// configuring the instance of your bot.
 		// Such as withToken, setDaemon etc
-		IDiscordClient client = new ClientBuilder().withToken(token).online(Config.getPrefix() + "help | " + Config.getName()).build();
+		IDiscordClient client = new ClientBuilder().withToken(token).setPresence(StatusType.ONLINE, ActivityType.LISTENING, Config.getPrefix() + "help | " + Config.getName()).build();
 		return client;
 
 	}

@@ -64,7 +64,7 @@ public class ResonantBot {
 			Config.save();
 		}
 		new File(directory, "commands").mkdir();
-		CommandManager.loadJars();
+		ModuleManager.reload();
 		client = BotUtils.getBuiltDiscordClient(Config.getToken());
 		client.getDispatcher().registerListeners(new MessageListener(), new ReadyListener(), new ConnectionListener());
 		client.login();

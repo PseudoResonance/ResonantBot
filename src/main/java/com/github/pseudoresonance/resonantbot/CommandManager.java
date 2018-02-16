@@ -6,6 +6,9 @@ import java.util.HashMap;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.slf4j.Logger;
 
+import com.github.pseudoresonance.resonantbot.api.Command;
+import com.github.pseudoresonance.resonantbot.api.Module;
+
 public class CommandManager {
 	
 	private static Logger log = ResonantBot.getLogger();

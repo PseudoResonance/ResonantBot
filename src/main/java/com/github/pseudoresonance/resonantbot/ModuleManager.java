@@ -17,6 +17,8 @@ import javax.json.JsonReader;
 
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 
+import com.github.pseudoresonance.resonantbot.api.Module;
+
 import sx.blah.discord.handle.obj.IChannel;
 
 public class ModuleManager {
@@ -39,7 +41,11 @@ public class ModuleManager {
 			}
 		}
 		for (Module m : modules.values()) {
-			m.onEnable();
+			try {
+				m.onEnable();
+			} catch (Exception e) {
+				ResonantBot.getLogger().error("Error while enabling module: " + m.getName(), e);
+			}
 		}
 	}
 	
@@ -92,7 +98,13 @@ public class ModuleManager {
 			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | SecurityException e) {
 				ResonantBot.getLogger().error("Main class has incorrect constructor in module: " + f.getName(), e);
 				error = "Main class has incorrect constructor in module: " + f.getName();
-			} finally {
+			} catch (Exception e) {
+				ResonantBot.getLogger().error("Error while loading module: " + f.getName(), e);
+				error = "Error while loading module: " + f.getName();
+			} catch (Error e) {
+				ResonantBot.getLogger().error("Error while loading module: " + f.getName(), e);
+				error = "Error while loading module: " + f.getName();
+			}finally {
 				try {
 					jr.close();
 				} catch (NullPointerException e) {
@@ -120,7 +132,11 @@ public class ModuleManager {
 		}
 		if (enable) {
 			if (module != null) {
-				module.onEnable();
+				try {
+					module.onEnable();
+				} catch (Exception e) {
+					ResonantBot.getLogger().error("Error while enabling module: " + module.getName(), e);
+				}
 			}
 		}
 		return error;

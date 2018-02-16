@@ -109,6 +109,7 @@ public class Config {
 				token = config.getString("token");
 				prefix = config.getString("prefix");
 				name = config.getString("name");
+				
 				config = null;
 				conf = null;
 			} catch (IOException e) {

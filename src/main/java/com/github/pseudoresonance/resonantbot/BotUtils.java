@@ -5,6 +5,7 @@ import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.handle.obj.ActivityType;
 import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.StatusType;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.RateLimitException;
@@ -24,13 +25,13 @@ public class BotUtils {
 	}
 
 	// Helper functions to make certain aspects of the bot easier to use.
-	public static void sendMessage(IChannel channel, String message) {
+	public static IMessage sendMessage(IChannel channel, String message) {
 
 		// This might look weird but it'll be explained in another page.
 		RequestBuffer.request(() -> {
 			try {
 				int zero = 0x200B;
-				channel.sendMessage(Character.toString((char) zero) + message);
+				return channel.sendMessage(Character.toString((char) zero) + message);
 			} catch (RateLimitException e) {
 				System.err.println("Message could not be sent due to rate limit!");
 				throw e;
@@ -40,23 +41,24 @@ public class BotUtils {
 				throw e;
 			}
 		});
+		return null;
 	}
 	
-	public static void sendMessage(IChannel channel, EmbedObject embed) {
+	public static IMessage sendMessage(IChannel channel, EmbedObject embed) {
 
 		// This might look weird but it'll be explained in another page.
 		RequestBuffer.request(() -> {
 			try {
-				channel.sendMessage(embed);
-				return;
+				return channel.sendMessage(embed);
 			} catch (RateLimitException e) {
 				System.err.println("Message could not be sent due to rate limit!");
-				return;
+				throw e;
 			} catch (DiscordException e) {
 				System.err.println("Message could not be sent with error: ");
 				e.printStackTrace();
-				return;
+				throw e;
 			}
 		});
+		return null;
 	}
 }

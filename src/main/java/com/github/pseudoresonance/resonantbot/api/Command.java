@@ -1,4 +1,4 @@
-package com.github.pseudoresonance.resonantbot;
+package com.github.pseudoresonance.resonantbot.api;
 
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 

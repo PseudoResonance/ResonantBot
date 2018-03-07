@@ -21,14 +21,13 @@ public class BotUtils {
 		// Such as withToken, setDaemon etc
 		IDiscordClient client = new ClientBuilder().withToken(token).setPresence(StatusType.ONLINE, ActivityType.LISTENING, Config.getPrefix() + "help | " + Config.getName()).build();
 		return client;
-
 	}
 
 	// Helper functions to make certain aspects of the bot easier to use.
 	public static IMessage sendMessage(IChannel channel, String message) {
 
 		// This might look weird but it'll be explained in another page.
-		RequestBuffer.request(() -> {
+		IMessage msg = RequestBuffer.request(() -> {
 			try {
 				int zero = 0x200B;
 				return channel.sendMessage(Character.toString((char) zero) + message);
@@ -40,14 +39,14 @@ public class BotUtils {
 				e.printStackTrace();
 				throw e;
 			}
-		});
-		return null;
+		}).get();
+		return msg;
 	}
 	
 	public static IMessage sendMessage(IChannel channel, EmbedObject embed) {
 
 		// This might look weird but it'll be explained in another page.
-		RequestBuffer.request(() -> {
+		IMessage msg = RequestBuffer.request(() -> {
 			try {
 				return channel.sendMessage(embed);
 			} catch (RateLimitException e) {
@@ -58,7 +57,7 @@ public class BotUtils {
 				e.printStackTrace();
 				throw e;
 			}
-		});
-		return null;
+		}).get();
+		return msg;
 	}
 }

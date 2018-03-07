@@ -24,7 +24,6 @@ public class ResonantBot {
 	public static void main(String[] args) {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run() {
-				ResonantBot.getClient().logout();
 				Config.saveData();
 			}
 		});
@@ -64,10 +63,15 @@ public class ResonantBot {
 			Config.save();
 		}
 		new File(directory, "modules").mkdir();
-		ModuleManager.reload();
 		client = BotUtils.getBuiltDiscordClient(Config.getToken());
 		client.getDispatcher().registerListeners(new MessageListener(), new ReadyListener(), new ConnectionListener());
-		client.login();
+		ModuleManager.reload();
+		try {
+			client.login();
+		} catch (OutOfMemoryError e) {
+			log.error("Out of Memory", e);
+			System.exit(1);
+		}
 	}
 
 	public static String getArg(String arg) {

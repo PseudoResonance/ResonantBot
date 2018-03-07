@@ -16,17 +16,13 @@ public class ConnectionListener {
 	@EventSubscriber
 	public void onDisconnect(DisconnectedEvent e) {
 		log.warn("Disconnected from Discord for reason: " + e.getReason());
-		log.info("Attempting to login.");
+		log.info("Attempting to reconnect...");
 		e.getShard().login();
 	}
 
 	@EventSubscriber
 	public void onResonnectFail(ReconnectFailureEvent e) {
 		log.warn("Shard " + e.getShard().toString() + " disconnected from Discord on " + e.getCurrentAttempt() + " try.");
-		if (!e.isShardAbandoned()) {
-			log.info("Attempting to login.");
-			e.getShard().login();
-		}
 	}
 
 	@EventSubscriber

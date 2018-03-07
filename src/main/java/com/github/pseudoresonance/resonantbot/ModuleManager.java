@@ -101,6 +101,10 @@ public class ModuleManager {
 			} catch (Exception e) {
 				ResonantBot.getLogger().error("Error while loading module: " + f.getName(), e);
 				error = "Error while loading module: " + f.getName();
+			} catch (OutOfMemoryError e) {
+				ResonantBot.getLogger().error("Error while loading module: " + f.getName(), e);
+				error = "Error while loading module: " + f.getName();
+				System.exit(1);
 			} catch (Error e) {
 				ResonantBot.getLogger().error("Error while loading module: " + f.getName(), e);
 				error = "Error while loading module: " + f.getName();

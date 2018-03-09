@@ -62,16 +62,11 @@ public class ResonantBot {
 			Config.setPrefix(prefix);
 			Config.save();
 		}
-		new File(directory, "modules").mkdir();
+		new File(directory, "plugins").mkdir();
 		client = BotUtils.getBuiltDiscordClient(Config.getToken());
 		client.getDispatcher().registerListeners(new MessageListener(), new ReadyListener(), new ConnectionListener());
-		ModuleManager.reload();
-		try {
-			client.login();
-		} catch (OutOfMemoryError e) {
-			log.error("Out of Memory", e);
-			System.exit(1);
-		}
+		PluginManager.reload();
+		client.login();
 	}
 
 	public static String getArg(String arg) {

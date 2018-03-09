@@ -7,31 +7,31 @@ import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.slf4j.Logger;
 
 import com.github.pseudoresonance.resonantbot.api.Command;
-import com.github.pseudoresonance.resonantbot.api.Module;
+import com.github.pseudoresonance.resonantbot.api.Plugin;
 
 public class CommandManager {
 	
 	private static Logger log = ResonantBot.getLogger();
 	
 	private static HashMap<String, Command> commands = new HashMap<String, Command>();
-	private static DualHashBidiMap<Module, ArrayList<String>> commandModules = new DualHashBidiMap<Module, ArrayList<String>>();
+	private static DualHashBidiMap<Plugin, ArrayList<String>> commandPlugins = new DualHashBidiMap<Plugin, ArrayList<String>>();
 	
-	public static boolean registerCommand(String text, Command c, Module module) {
+	public static boolean registerCommand(String text, Command c, Plugin module) {
 		text = text.toLowerCase();
 		if (commands.containsKey(text)) {
 			return false;
 		} else {
 			log.debug("Adding command: " + text);
 			commands.put(text, c);
-			if (commandModules.containsKey(module)) {
-				ArrayList<String> list = commandModules.get(module);
+			if (commandPlugins.containsKey(module)) {
+				ArrayList<String> list = commandPlugins.get(module);
 				if (!list.contains(text))
 					list.add(text);
-				commandModules.put(module, list);
+				commandPlugins.put(module, list);
 			} else {
 				ArrayList<String> list = new ArrayList<String>();
 				list.add(text);
-				commandModules.put(module, list);
+				commandPlugins.put(module, list);
 			}
 			return true;
 		}
@@ -46,24 +46,24 @@ public class CommandManager {
 		}
 	}
 	
-	public static ArrayList<String> getModuleCommands(Module module) {
-		if (commandModules.containsKey(module)) {
-			return commandModules.get(module);
+	public static ArrayList<String> getModuleCommands(Plugin module) {
+		if (commandPlugins.containsKey(module)) {
+			return commandPlugins.get(module);
 		} else {
 			return null;
 		}
 	}
 	
-	public static boolean unregisterCommand(String text, Module module) {
+	public static boolean unregisterCommand(String text, Plugin module) {
 		text = text.toLowerCase();
 		if (commands.containsKey(text)) {
 			log.debug("Removing command: " + text);
-			ArrayList<String> commandList = commandModules.get(module);
+			ArrayList<String> commandList = commandPlugins.get(module);
 			commandList.remove(text);
 			if (commandList.size() > 0)
-				commandModules.put(module, commandList);
+				commandPlugins.put(module, commandList);
 			else
-				commandModules.remove(module);
+				commandPlugins.remove(module);
 			commands.remove(text);
 			return true;
 		} else {
@@ -71,14 +71,14 @@ public class CommandManager {
 		}
 	}
 	
-	public static boolean unregisterModuleCommands(Module module) {
-		if (commandModules.containsKey(module)) {
-			ArrayList<String> commandList = commandModules.get(module);
+	public static boolean unregisterPluginCommands(Plugin module) {
+		if (commandPlugins.containsKey(module)) {
+			ArrayList<String> commandList = commandPlugins.get(module);
 			for (String text : commandList) {
 				log.debug("Removing command: " + text);
 				commands.remove(text);
 			}
-			commandModules.remove(module);
+			commandPlugins.remove(module);
 			module = null;
 			return true;
 		} else
@@ -89,8 +89,8 @@ public class CommandManager {
 		return CommandManager.commands;
 	}
 	
-	public static DualHashBidiMap<Module, ArrayList<String>> getAllModuleCommands() {
-		return CommandManager.commandModules;
+	public static DualHashBidiMap<Plugin, ArrayList<String>> getAllModuleCommands() {
+		return CommandManager.commandPlugins;
 	}
 
 }

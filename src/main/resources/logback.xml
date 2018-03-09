@@ -2,17 +2,27 @@
 	<timestamp key="bySecond" datePattern="yyyy-MM-dd_HH-mm-ss" />
 	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
 		<file>logs/${bySecond}.log</file>
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>DEBUG</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
 		<encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
 			<layout class="com.github.pseudoresonance.resonantbot.log.FLayout" />
 		</encoder>
 	</appender>
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>INFO</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
 		<encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
 			<layout class="com.github.pseudoresonance.resonantbot.log.CLayout" />
 		</encoder>
 	</appender>
 	<root level="DEBUG">
-		<appender-ref ref="STDOUT" />
 		<appender-ref ref="FILE" />
+		<appender-ref ref="STDOUT" />
 	</root>
 </configuration>

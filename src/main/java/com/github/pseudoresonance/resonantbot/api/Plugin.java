@@ -1,6 +1,6 @@
 package com.github.pseudoresonance.resonantbot.api;
 
-public abstract class Module {
+public abstract class Plugin {
 	
 	public abstract void onEnable();
 	

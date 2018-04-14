@@ -61,15 +61,15 @@ public class PluginManager {
 			return "Could not find jar: " + f.getName();
 	}
 	
-	public static boolean unload(Plugin mod) {
-		if (plugins.containsValue(mod)) {
-			File f = plugins.getKey(mod);
-			mod.onDisable();
-			CommandManager.unregisterPluginCommands(mod);
-			PluginFileLoader.disablePlugin(mod);
-			ResonantBot.getLogger().info("Unloaded plugin: " + mod.getName() + " in jar: " + f.getName());
-			plugins.remove(f, mod);
-			mod = null;
+	public static boolean unload(Plugin plugin) {
+		if (plugins.containsValue(plugin)) {
+			File f = plugins.getKey(plugin);
+			plugin.onDisable();
+			CommandManager.unregisterPluginCommands(plugin);
+			PluginFileLoader.disablePlugin(plugin);
+			ResonantBot.getLogger().info("Unloaded plugin: " + plugin.getName() + " in jar: " + f.getName());
+			plugins.remove(f, plugin);
+			plugin = null;
 			System.gc();
 			return true;
 		}
@@ -82,8 +82,8 @@ public class PluginManager {
 		BotUtils.sendMessage(chan, result);
 	}
 	
-	public static File getFile(Plugin mod) {
-		return plugins.getKey(mod);
+	public static File getFile(Plugin plugin) {
+		return plugins.getKey(plugin);
 	}
 	
 	public static Plugin getPlugin(File f) {

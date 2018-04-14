@@ -16,22 +16,22 @@ public class CommandManager {
 	private static HashMap<String, Command> commands = new HashMap<String, Command>();
 	private static DualHashBidiMap<Plugin, ArrayList<String>> commandPlugins = new DualHashBidiMap<Plugin, ArrayList<String>>();
 	
-	public static boolean registerCommand(String text, Command c, Plugin module) {
+	public static boolean registerCommand(String text, Command c, Plugin plugin) {
 		text = text.toLowerCase();
 		if (commands.containsKey(text)) {
 			return false;
 		} else {
 			log.debug("Adding command: " + text);
 			commands.put(text, c);
-			if (commandPlugins.containsKey(module)) {
-				ArrayList<String> list = commandPlugins.get(module);
+			if (commandPlugins.containsKey(plugin)) {
+				ArrayList<String> list = commandPlugins.get(plugin);
 				if (!list.contains(text))
 					list.add(text);
-				commandPlugins.put(module, list);
+				commandPlugins.put(plugin, list);
 			} else {
 				ArrayList<String> list = new ArrayList<String>();
 				list.add(text);
-				commandPlugins.put(module, list);
+				commandPlugins.put(plugin, list);
 			}
 			return true;
 		}
@@ -46,24 +46,24 @@ public class CommandManager {
 		}
 	}
 	
-	public static ArrayList<String> getModuleCommands(Plugin module) {
-		if (commandPlugins.containsKey(module)) {
-			return commandPlugins.get(module);
+	public static ArrayList<String> getModuleCommands(Plugin plugin) {
+		if (commandPlugins.containsKey(plugin)) {
+			return commandPlugins.get(plugin);
 		} else {
 			return null;
 		}
 	}
 	
-	public static boolean unregisterCommand(String text, Plugin module) {
+	public static boolean unregisterCommand(String text, Plugin plugin) {
 		text = text.toLowerCase();
 		if (commands.containsKey(text)) {
 			log.debug("Removing command: " + text);
-			ArrayList<String> commandList = commandPlugins.get(module);
+			ArrayList<String> commandList = commandPlugins.get(plugin);
 			commandList.remove(text);
 			if (commandList.size() > 0)
-				commandPlugins.put(module, commandList);
+				commandPlugins.put(plugin, commandList);
 			else
-				commandPlugins.remove(module);
+				commandPlugins.remove(plugin);
 			commands.remove(text);
 			return true;
 		} else {
@@ -71,15 +71,15 @@ public class CommandManager {
 		}
 	}
 	
-	public static boolean unregisterPluginCommands(Plugin module) {
-		if (commandPlugins.containsKey(module)) {
-			ArrayList<String> commandList = commandPlugins.get(module);
+	public static boolean unregisterPluginCommands(Plugin plugin) {
+		if (commandPlugins.containsKey(plugin)) {
+			ArrayList<String> commandList = commandPlugins.get(plugin);
 			for (String text : commandList) {
 				log.debug("Removing command: " + text);
 				commands.remove(text);
 			}
-			commandPlugins.remove(module);
-			module = null;
+			commandPlugins.remove(plugin);
+			plugin = null;
 			return true;
 		} else
 			return false;

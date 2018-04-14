@@ -7,6 +7,7 @@ import java.util.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.pseudoresonance.resonantbot.api.Plugin;
 import com.github.pseudoresonance.resonantbot.listeners.ConnectionListener;
 import com.github.pseudoresonance.resonantbot.listeners.MessageListener;
 import com.github.pseudoresonance.resonantbot.listeners.ReadyListener;
@@ -25,6 +26,9 @@ public class ResonantBot {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run() {
 				Config.saveData();
+				for (Plugin p : PluginManager.getPlugins()) {
+					PluginManager.unload(p);
+				}
 			}
 		});
 		ResonantBot.args = Startup.parseArgs(args);

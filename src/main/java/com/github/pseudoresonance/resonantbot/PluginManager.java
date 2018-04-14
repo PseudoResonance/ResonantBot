@@ -4,16 +4,9 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
 
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 
@@ -42,7 +35,7 @@ public class PluginManager {
 		}
 		for (Plugin m : plugins.values()) {
 			try {
-				m.onEnable();
+				PluginFileLoader.enablePlugin(m);
 			} catch (Exception e) {
 				ResonantBot.getLogger().error("Error while enabling plugin: " + m.getName(), e);
 			}
@@ -51,110 +44,36 @@ public class PluginManager {
 	
 	public static String load(File f, boolean enable) {
 		ResonantBot.getLogger().info("Loading plugin jar: " + f.getName());
-		String mainClass = "";
-		String name = "";
-		String error = "";
-		Plugin plugin = null;
-		if (f.exists()) {
-			ZipInputStream in = null;
-			JsonReader jr = null;
-			URLClassLoader loader = null;
-			try {
-				URL url = new URL("jar", "","file:" + f.getAbsolutePath() + "!/");
-				in = getInputStream(f, "plugin.json");
-				jr = Json.createReader(in);
-				JsonObject jo = jr.readObject();
-				try {
-					mainClass = jo.getString("Main");
-				} catch (NullPointerException e) {
-					ResonantBot.getLogger().error("No main class in plugin.json in plugin: " + f.getName());
-					error = "No main class in plugin.json in plugin: " + f.getName();
-				}
-				try {
-					name = jo.getString("Name");
-				} catch (NullPointerException e) {
-					ResonantBot.getLogger().error("No name in plugin.json in plugin: " + f.getName());
-					error = "No name in plugin.json in plugin: " + f.getName();
-				}
-				loader = new URLClassLoader(new URL[] {url}, ResonantBot.class.getClassLoader());
-				Class<?> clazz = loader.loadClass(mainClass);
-				if (Plugin.class.isAssignableFrom(clazz)) {
-					ResonantBot.getLogger().info("Initializing plugin: " + name + " in jar: " + f.getName());
-					plugin = (Plugin) clazz.getConstructors()[0].newInstance();
-					plugins.put(f, plugin);
-				} else {
-					ResonantBot.getLogger().error("Class: " + mainClass + " does not extend plugin!");
-					error = "Class: " + mainClass + " does not extend plugin!";
-				}
-			} catch (EOFException e) {
-				ResonantBot.getLogger().error("No plugin.json in plugin: " + f.getName());
-				error = "No plugin.json in plugin: " + f.getName();
-			} catch (IOException e) {
-				ResonantBot.getLogger().error("Failed to load plugin: " + f.getName(), e);
-				error = "Failed to load plugin: " + f.getName();
-			} catch (ClassNotFoundException e) {
-				ResonantBot.getLogger().error("Invalid main class: " + mainClass + " in plugin: " + f.getName(), e);
-				error = "Invalid main class: " + mainClass + " in plugin: " + f.getName();
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | SecurityException e) {
-				ResonantBot.getLogger().error("Main class has incorrect constructor in plugin: " + f.getName(), e);
-				error = "Main class has incorrect constructor in plugin: " + f.getName();
-			} catch (Exception e) {
-				ResonantBot.getLogger().error("Error while loading plugin: " + f.getName(), e);
-				error = "Error while loading plugin: " + f.getName();
-			} catch (OutOfMemoryError e) {
-				ResonantBot.getLogger().error("Error while loading plugin: " + f.getName(), e);
-				error = "Error while loading plugin: " + f.getName();
-				System.exit(1);
-			} catch (Error e) {
-				ResonantBot.getLogger().error("Error while loading plugin: " + f.getName(), e);
-				error = "Error while loading plugin: " + f.getName();
-			}finally {
-				try {
-					jr.close();
-				} catch (NullPointerException e) {
-				}
-				try {
-					in.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				} catch (NullPointerException e) {
-				}
-				try {
-					loader.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				} catch (NullPointerException e) {
-				}
+		Plugin p;
+		try {
+			p = PluginFileLoader.loadPlugin(f);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Error while loading jar: " + f.getName();
+		}
+		if (p != null) {
+			plugins.put(f, p);
+			if (enable) {
+				PluginFileLoader.enablePlugin(p);
 			}
+			return "Completed loading plugin: " + p.getName();
 		} else
-			error = "File: " + f.getName() + " does not exist!";
-		if (error != "")
-			ResonantBot.getLogger().info("Failed to initialize plugin: " + name + " in jar: " + f.getName());
-		else {
-			ResonantBot.getLogger().info("Completed initializing plugin: " + name + " in jar: " + f.getName());
-			error = "Completed initializing plugin: " + name;
-		}
-		if (enable) {
-			if (plugin != null) {
-				try {
-					plugin.onEnable();
-				} catch (Exception e) {
-					ResonantBot.getLogger().error("Error while enabling plugin: " + plugin.getName(), e);
-				}
-			}
-		}
-		return error;
+			return "Could not find jar: " + f.getName();
 	}
 	
-	public static void unload(Plugin mod) {
+	public static boolean unload(Plugin mod) {
 		if (plugins.containsValue(mod)) {
 			File f = plugins.getKey(mod);
 			mod.onDisable();
 			CommandManager.unregisterPluginCommands(mod);
+			PluginFileLoader.disablePlugin(mod);
 			ResonantBot.getLogger().info("Unloaded plugin: " + mod.getName() + " in jar: " + f.getName());
-			plugins.remove(mod);
+			plugins.remove(f, mod);
 			mod = null;
+			System.gc();
+			return true;
 		}
+		return false;
 	}
 	
 	public static void reload(File f, IChannel chan) {

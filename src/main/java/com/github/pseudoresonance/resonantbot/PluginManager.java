@@ -24,7 +24,7 @@ public class PluginManager {
 	
 	public static void reload() {
 		for (Plugin plug : plugins.values()) {
-			plug.onDisable();
+			PluginFileLoader.disablePlugin(plug);
 			plugins.removeValue(plug);
 		}
 		plugins.clear();
@@ -86,30 +86,12 @@ public class PluginManager {
 			return "Could not find jar: " + f.getName();
 	}
 	
-	protected static boolean unloadBatch(Plugin plugin) {
-		if (plugins.containsValue(plugin)) {
-			File f = plugins.getKey(plugin);
-			plugin.onDisable();
-			CommandManager.unregisterPluginCommands(plugin);
-			PluginFileLoader.disablePlugin(plugin);
-			pluginNames.remove(plugin.getName());
-			ResonantBot.getLogger().info("Unloaded plugin: " + plugin.getName() + " in jar: " + f.getName());
-			plugins.remove(f, plugin);
-			plugin = null;
-			System.gc();
-			return true;
-		}
-		return false;
-	}
-	
 	public static boolean unload(Plugin plugin) {
 		if (plugins.containsValue(plugin)) {
 			File f = plugins.getKey(plugin);
-			plugin.onDisable();
 			CommandManager.unregisterPluginCommands(plugin);
 			PluginFileLoader.disablePlugin(plugin);
 			pluginNames.remove(plugin.getName());
-			pluginNames.sort(String::compareToIgnoreCase);
 			ResonantBot.getLogger().info("Unloaded plugin: " + plugin.getName() + " in jar: " + f.getName());
 			plugins.remove(f, plugin);
 			plugin = null;
@@ -127,6 +109,15 @@ public class PluginManager {
 	
 	public static File getFile(Plugin plugin) {
 		return plugins.getKey(plugin);
+	}
+	
+	public static Plugin getPlugin(String s) {
+		for (Plugin p : plugins.values()) {
+			if (p.getName().equalsIgnoreCase(s)) {
+				return p;
+			}
+		}
+		return null;
 	}
 	
 	public static Plugin getPlugin(File f) {

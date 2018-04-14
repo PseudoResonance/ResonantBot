@@ -58,10 +58,6 @@ public final class PluginFileLoader {
 
 	}
 
-	private static void removeClass(String name) {
-		classes.remove(name);
-	}
-
 	public static void enablePlugin(Plugin plugin) {
 		if (!plugin.isEnabled()) {
 			ResonantBot.getLogger().info("Enabling plugin: " + plugin.getName());
@@ -96,8 +92,10 @@ public final class PluginFileLoader {
 				Iterator<?> arg7 = names.iterator();
 				while (arg7.hasNext()) {
 					String name = (String) arg7.next();
-					removeClass(name);
+					classes.remove(name);
 				}
+				loader.delete();
+				loader = null;
 			}
 		}
 

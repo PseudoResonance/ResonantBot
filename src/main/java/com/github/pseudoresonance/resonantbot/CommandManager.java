@@ -2,8 +2,8 @@ package com.github.pseudoresonance.resonantbot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
-import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.slf4j.Logger;
 
 import com.github.pseudoresonance.resonantbot.api.Command;
@@ -14,7 +14,7 @@ public class CommandManager {
 	private static Logger log = ResonantBot.getLogger();
 	
 	private static HashMap<String, Command> commands = new HashMap<String, Command>();
-	private static DualHashBidiMap<Plugin, ArrayList<String>> commandPlugins = new DualHashBidiMap<Plugin, ArrayList<String>>();
+	private static HashMap<Plugin, ArrayList<String>> commandPlugins = new HashMap<Plugin, ArrayList<String>>();
 	
 	public static boolean registerCommand(String text, Command c, Plugin plugin) {
 		text = text.toLowerCase();
@@ -27,6 +27,7 @@ public class CommandManager {
 				ArrayList<String> list = commandPlugins.get(plugin);
 				if (!list.contains(text))
 					list.add(text);
+				list.sort(String::compareToIgnoreCase);
 				commandPlugins.put(plugin, list);
 			} else {
 				ArrayList<String> list = new ArrayList<String>();
@@ -89,9 +90,9 @@ public class CommandManager {
 		return CommandManager.commands;
 	}
 	
-	public static HashMap<String, Command> getPluginCommandMap(Plugin plugin) {
+	public static LinkedHashMap<String, Command> getPluginCommandMap(Plugin plugin) {
 		if (plugin != null) {
-			HashMap<String, Command> ret = new HashMap<String, Command>();
+			LinkedHashMap<String, Command> ret = new LinkedHashMap<String, Command>();
 			ArrayList<String> cmds = CommandManager.commandPlugins.get(plugin);
 			for (String cmd : cmds) {
 				ret.put(cmd, commands.get(cmd));
@@ -101,7 +102,7 @@ public class CommandManager {
 		return null;
 	}
 	
-	public static DualHashBidiMap<Plugin, ArrayList<String>> getAllPluginCommands() {
+	public static HashMap<Plugin, ArrayList<String>> getAllPluginCommands() {
 		return CommandManager.commandPlugins;
 	}
 

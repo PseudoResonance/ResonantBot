@@ -3,8 +3,12 @@ package com.github.pseudoresonance.resonantbot.api;
 public abstract class Plugin {
 
 	private boolean isEnabled = false;
-	private ClassLoader classLoader = null;
+	private final ClassLoader classLoader;
 	private String name;
+	
+	public Plugin() {
+		this.classLoader = this.getClass().getClassLoader();
+	}
 
 	public abstract void onEnable();
 

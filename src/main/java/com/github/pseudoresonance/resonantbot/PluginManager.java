@@ -4,6 +4,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -19,18 +20,19 @@ public class PluginManager {
 	private static File dir = new File(ResonantBot.getDir(), "plugins");
 	
 	private static DualHashBidiMap<File, Plugin> plugins = new DualHashBidiMap<File, Plugin>();
+	private static ArrayList<String> pluginNames = new ArrayList<String>();
 	
 	public static void reload() {
-		for (Plugin mod : plugins.values()) {
-			mod.onDisable();
-			plugins.removeValue(mod);
+		for (Plugin plug : plugins.values()) {
+			plug.onDisable();
+			plugins.removeValue(plug);
 		}
 		plugins.clear();
 		File[] newFiles = dir.listFiles();
 		for (File f : newFiles) {
 			if (f.getName().endsWith(".jar")) {
 				ResonantBot.getLogger().info("Found plugin jar: " + f.getName());
-				load(f, false);
+				loadBatch(f, false);
 			}
 		}
 		for (Plugin m : plugins.values()) {
@@ -40,6 +42,27 @@ public class PluginManager {
 				ResonantBot.getLogger().error("Error while enabling plugin: " + m.getName(), e);
 			}
 		}
+		pluginNames.sort(String::compareToIgnoreCase);
+	}
+	
+	private static String loadBatch(File f, boolean enable) {
+		ResonantBot.getLogger().info("Loading plugin jar: " + f.getName());
+		Plugin p;
+		try {
+			p = PluginFileLoader.loadPlugin(f);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Error while loading jar: " + f.getName();
+		}
+		if (p != null) {
+			plugins.put(f, p);
+			if (enable) {
+				PluginFileLoader.enablePlugin(p);
+			}
+			pluginNames.add(p.getName());
+			return "Completed loading plugin: " + p.getName();
+		} else
+			return "Could not find jar: " + f.getName();
 	}
 	
 	public static String load(File f, boolean enable) {
@@ -56,9 +79,27 @@ public class PluginManager {
 			if (enable) {
 				PluginFileLoader.enablePlugin(p);
 			}
+			pluginNames.add(p.getName());
+			pluginNames.sort(String::compareToIgnoreCase);
 			return "Completed loading plugin: " + p.getName();
 		} else
 			return "Could not find jar: " + f.getName();
+	}
+	
+	protected static boolean unloadBatch(Plugin plugin) {
+		if (plugins.containsValue(plugin)) {
+			File f = plugins.getKey(plugin);
+			plugin.onDisable();
+			CommandManager.unregisterPluginCommands(plugin);
+			PluginFileLoader.disablePlugin(plugin);
+			pluginNames.remove(plugin.getName());
+			ResonantBot.getLogger().info("Unloaded plugin: " + plugin.getName() + " in jar: " + f.getName());
+			plugins.remove(f, plugin);
+			plugin = null;
+			System.gc();
+			return true;
+		}
+		return false;
 	}
 	
 	public static boolean unload(Plugin plugin) {
@@ -67,6 +108,8 @@ public class PluginManager {
 			plugin.onDisable();
 			CommandManager.unregisterPluginCommands(plugin);
 			PluginFileLoader.disablePlugin(plugin);
+			pluginNames.remove(plugin.getName());
+			pluginNames.sort(String::compareToIgnoreCase);
 			ResonantBot.getLogger().info("Unloaded plugin: " + plugin.getName() + " in jar: " + f.getName());
 			plugins.remove(f, plugin);
 			plugin = null;
@@ -96,6 +139,10 @@ public class PluginManager {
 	
 	public static File getDir() {
 		return dir;
+	}
+	
+	public static ArrayList<String> getPluginNames() {
+		return pluginNames;
 	}
 
 	static ZipInputStream getInputStream(File zip, String entry) throws IOException {

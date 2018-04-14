@@ -46,7 +46,7 @@ public class CommandManager {
 		}
 	}
 	
-	public static ArrayList<String> getModuleCommands(Plugin plugin) {
+	public static ArrayList<String> getPluginCommands(Plugin plugin) {
 		if (commandPlugins.containsKey(plugin)) {
 			return commandPlugins.get(plugin);
 		} else {
@@ -89,7 +89,19 @@ public class CommandManager {
 		return CommandManager.commands;
 	}
 	
-	public static DualHashBidiMap<Plugin, ArrayList<String>> getAllModuleCommands() {
+	public static HashMap<String, Command> getPluginCommandMap(Plugin plugin) {
+		if (plugin != null) {
+			HashMap<String, Command> ret = new HashMap<String, Command>();
+			ArrayList<String> cmds = CommandManager.commandPlugins.get(plugin);
+			for (String cmd : cmds) {
+				ret.put(cmd, commands.get(cmd));
+			}
+			return ret;
+		}
+		return null;
+	}
+	
+	public static DualHashBidiMap<Plugin, ArrayList<String>> getAllPluginCommands() {
 		return CommandManager.commandPlugins;
 	}
 

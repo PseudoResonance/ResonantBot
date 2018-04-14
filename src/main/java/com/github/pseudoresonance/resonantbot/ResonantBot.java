@@ -27,7 +27,7 @@ public class ResonantBot {
 			public void run() {
 				Config.saveData();
 				for (Plugin p : PluginManager.getPlugins()) {
-					PluginManager.unload(p);
+					PluginManager.unloadBatch(p);
 				}
 			}
 		});

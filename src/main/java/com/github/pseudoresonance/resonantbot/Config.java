@@ -23,7 +23,7 @@ public class Config {
 	private static long owner = 0;
 
 	public static boolean isTokenSet() {
-		if (token == "" || token == null) {
+		if (token.equals("") || token == null) {
 			return false;
 		} else {
 			return true;

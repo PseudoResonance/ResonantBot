@@ -30,7 +30,6 @@ public class ResonantBot {
 			@Override
 			public void run() {
 				log.info("Shutting down!");
-				Config.save();
 				Config.saveData();
 				log.info("Configuration saved!");
 				for (Plugin p : PluginManager.getPlugins()) {

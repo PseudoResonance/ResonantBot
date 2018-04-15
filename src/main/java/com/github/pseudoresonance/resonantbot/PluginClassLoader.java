@@ -50,7 +50,7 @@ public final class PluginClassLoader extends URLClassLoader {
 						Class<?> ex = Class.forName(mainClass, true, this);
 						try {
 							Class<?> pluginClass = ex.asSubclass(Plugin.class);
-							plug = (Plugin) pluginClass.newInstance();
+							plug = (Plugin) pluginClass.getDeclaredConstructor().newInstance();
 							plug.init(name);
 						} catch (ClassCastException exc) {
 							ResonantBot.getLogger().error("Class: " + mainClass + " does not extend plugin!", exc);

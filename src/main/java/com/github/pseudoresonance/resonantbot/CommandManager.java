@@ -8,6 +8,9 @@ import org.slf4j.Logger;
 
 import com.github.pseudoresonance.resonantbot.api.Command;
 import com.github.pseudoresonance.resonantbot.api.Plugin;
+import com.github.pseudoresonance.resonantbot.listeners.MessageListener;
+
+import sx.blah.discord.handle.obj.IChannel;
 
 public class CommandManager {
 	
@@ -104,6 +107,13 @@ public class CommandManager {
 	
 	public static HashMap<Plugin, ArrayList<String>> getAllPluginCommands() {
 		return CommandManager.commandPlugins;
+	}
+	
+	public static String getPrefix(IChannel channel) {
+		if (channel.isPrivate())
+			return Config.getPrefix();
+		else
+			return MessageListener.getPrefix(channel.getStringID());
 	}
 
 }

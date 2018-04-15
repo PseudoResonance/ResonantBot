@@ -22,7 +22,7 @@ public class ReadyListener {
 		log.info(Color.BRIGHT_CYAN + "Successfully connected to Discord as " + client.getApplicationName() + "!");
 		log.info(Color.BRIGHT_CYAN + "Use the following link to add me to your guild:\n");
 		log.info("https://discordapp.com/oauth2/authorize?client_id=" + client.getApplicationClientID() + "&scope=bot&permissions=3505222\n");
-		client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, Config.getPrefix() + "help | " + Config.getName());
+		client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, client.getGuilds().size() + " Servers | " + Config.getPrefix() + "help");
 	}
 
 }

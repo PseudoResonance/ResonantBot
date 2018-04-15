@@ -20,6 +20,7 @@ public class Config {
 	private static String token = "";
 	private static String prefix = "|";
 	private static String name = "ResonantBot";
+	private static long owner = 0;
 
 	public static boolean isTokenSet() {
 		if (token == "" || token == null) {
@@ -53,6 +54,18 @@ public class Config {
 		return name;
 	}
 	
+	public static void setOwner(long owner) {
+		Config.owner = owner;
+	}
+	
+	public static void setOwner(String owner) {
+		Config.owner = Long.valueOf(owner);
+	}
+	
+	public static long getOwner() {
+		return owner;
+	}
+	
 	public static void save() {
 		File dir = new File(ResonantBot.getDir(), "data");
 		dir.mkdir();
@@ -60,6 +73,7 @@ public class Config {
 		configBuild.add("token", token);
 		configBuild.add("prefix", prefix);
 		configBuild.add("name", name);
+		configBuild.add("owner", String.valueOf(owner));
 		JsonObject config = configBuild.build();
 		File conf = new File(dir, "config.json");
 		try {
@@ -106,9 +120,26 @@ public class Config {
 				json.close();
 				fs.close();
 				fs.close();
-				token = config.getString("token");
-				prefix = config.getString("prefix");
-				name = config.getString("name");
+				try {
+					token = config.getString("token");
+				} catch (NullPointerException e) {
+					token = "";
+				}
+				try {
+					prefix = config.getString("prefix");
+				} catch (NullPointerException e) {
+					prefix = "|";
+				}
+				try {
+					name = config.getString("name");
+				} catch (NullPointerException e) {
+					name = "ResonantBot";
+				}
+				try {
+					owner = Long.valueOf(config.getString("owner"));
+				} catch (NullPointerException e) {
+					owner = 0;
+				}
 				
 				config = null;
 				conf = null;

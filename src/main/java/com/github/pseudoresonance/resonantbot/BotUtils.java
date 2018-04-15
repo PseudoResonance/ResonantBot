@@ -19,7 +19,7 @@ public class BotUtils {
 		// The ClientBuilder object is where you will attach your params for
 		// configuring the instance of your bot.
 		// Such as withToken, setDaemon etc
-		IDiscordClient client = new ClientBuilder().withToken(token).setPresence(StatusType.ONLINE, ActivityType.LISTENING, Config.getPrefix() + "help | " + Config.getName()).build();
+		IDiscordClient client = new ClientBuilder().withToken(token).setPresence(StatusType.ONLINE, ActivityType.LISTENING, Config.getPrefix() + "help").build();
 		return client;
 	}
 

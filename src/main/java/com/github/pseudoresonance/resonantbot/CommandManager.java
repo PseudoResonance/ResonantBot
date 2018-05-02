@@ -42,12 +42,7 @@ public class CommandManager {
 	}
 	
 	public static Command getCommand(String text) {
-		text = text.toLowerCase();
-		if (commands.containsKey(text)) {
-			return commands.get(text);
-		} else {
-			return null;
-		}
+		return commands.get(text.toLowerCase());
 	}
 	
 	public static ArrayList<String> getPluginCommands(Plugin plugin) {
@@ -110,10 +105,7 @@ public class CommandManager {
 	}
 	
 	public static String getPrefix(IChannel channel) {
-		if (channel.isPrivate())
-			return Config.getPrefix();
-		else
-			return MessageListener.getPrefix(channel.getStringID());
+		return MessageListener.getPrefix(channel.getGuild());
 	}
 
 }

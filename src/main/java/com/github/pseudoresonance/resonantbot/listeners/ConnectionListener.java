@@ -6,8 +6,11 @@ import com.github.pseudoresonance.resonantbot.ResonantBot;
 
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.shard.DisconnectedEvent;
+import sx.blah.discord.handle.impl.events.shard.LoginEvent;
 import sx.blah.discord.handle.impl.events.shard.ReconnectFailureEvent;
 import sx.blah.discord.handle.impl.events.shard.ReconnectSuccessEvent;
+import sx.blah.discord.handle.obj.ActivityType;
+import sx.blah.discord.handle.obj.StatusType;
 
 public class ConnectionListener {
 	
@@ -27,7 +30,13 @@ public class ConnectionListener {
 
 	@EventSubscriber
 	public void onResonnectSuccess(ReconnectSuccessEvent e) {
-		log.warn("Shard " + e.getShard().toString() + " reconnected to Discord.");
+		log.info("Shard " + e.getShard().toString() + " reconnected to Discord.");
+	}
+
+	@EventSubscriber
+	public void onLogin(LoginEvent e) {
+		log.info("Shard " + e.getShard().toString() + " logged in to Discord.");
+		e.getShard().changePresence(StatusType.ONLINE, ActivityType.LISTENING, ResonantBot.getStatusMessage());
 	}
 	
 }

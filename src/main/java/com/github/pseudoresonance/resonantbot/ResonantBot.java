@@ -132,5 +132,12 @@ public class ResonantBot {
 	public static Logger getLogger() {
 		return log;
 	}
+	
+	public static String getStatusMessage() {
+		if (client != null)
+			return client.getGuilds().size() + " Servers | " + Config.getPrefix() + "help";
+		else
+			return Config.getPrefix() + "help";
+	}
 
 }

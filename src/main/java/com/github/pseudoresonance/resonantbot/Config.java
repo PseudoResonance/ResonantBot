@@ -91,9 +91,9 @@ public class Config {
 		File dir = new File(ResonantBot.getDir(), "data");
 		dir.mkdir();
 		JsonObjectBuilder prefixesBuild = Json.createObjectBuilder();
-		HashMap<String, String> prefixes = MessageListener.getPrefixes();
-		for (String p : prefixes.keySet()) {
-			prefixesBuild.add(p, prefixes.get(p));
+		HashMap<Long, String> prefixes = MessageListener.getPrefixes();
+		for (Long p : prefixes.keySet()) {
+			prefixesBuild.add(String.valueOf(p), prefixes.get(p));
 		}
 		JsonObject prefix = prefixesBuild.build();
 		File pre = new File(dir, "prefixes.json");
@@ -158,9 +158,11 @@ public class Config {
 				json.close();
 				fs.close();
 				fs.close();
-				HashMap<String, String> prefixes = new HashMap<String, String>();
+				HashMap<Long, String> prefixes = new HashMap<Long, String>();
 				for (String k : prefix.keySet()) {
-					prefixes.put(k, prefix.getString(k));
+					try {
+						prefixes.put(Long.valueOf(k), prefix.getString(k));
+					} catch (NumberFormatException e) {}
 				}
 				prefix = null;
 				pre = null;

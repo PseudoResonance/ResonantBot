@@ -13,7 +13,7 @@ import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 
 import com.github.pseudoresonance.resonantbot.api.Plugin;
 
-import sx.blah.discord.handle.obj.IChannel;
+import net.dv8tion.jda.core.entities.MessageChannel;
 
 public class PluginManager {
 	
@@ -86,8 +86,14 @@ public class PluginManager {
 			return "Could not find jar: " + f.getName();
 	}
 	
-	public static boolean unload(Plugin plugin) {
-		if (plugins.containsValue(plugin)) {
+	public static boolean unload(String name) {
+		Plugin plugin = null;
+		for (Plugin p : plugins.values()) {
+			if (p.getName().equalsIgnoreCase(name)) {
+				plugin = p;
+			}
+		}
+		if (plugin != null) {
 			File f = plugins.getKey(plugin);
 			CommandManager.unregisterPluginCommands(plugin);
 			PluginFileLoader.disablePlugin(plugin);
@@ -101,10 +107,10 @@ public class PluginManager {
 		return false;
 	}
 	
-	public static void reload(File f, IChannel chan) {
-		unload(plugins.get(f));
+	public static void reload(File f, MessageChannel chan) {
+		unload(plugins.get(f).getName());
 		String result = load(f, true);
-		BotUtils.sendMessage(chan, result);
+		chan.sendMessage(result).queue();
 	}
 	
 	public static File getFile(Plugin plugin) {

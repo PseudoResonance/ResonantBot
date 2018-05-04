@@ -1,13 +1,13 @@
 package com.github.pseudoresonance.resonantbot.api;
 
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
-public abstract class Command {
+public interface Command {
 	
-	public abstract void onCommand(MessageReceivedEvent e, String command, String[] args);
+	public void onCommand(MessageReceivedEvent e, String command, String[] args);
 	
-	public abstract String getDesc();
+	public String getDesc();
 	
-	public abstract boolean isHidden();
+	public boolean isHidden();
 
 }

@@ -1,8 +1,11 @@
 package com.github.pseudoresonance.resonantbot;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
+
+import javax.security.auth.login.LoginException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +16,8 @@ import com.github.pseudoresonance.resonantbot.listeners.GuildListener;
 import com.github.pseudoresonance.resonantbot.listeners.MessageListener;
 import com.github.pseudoresonance.resonantbot.listeners.ReadyListener;
 
-import sx.blah.discord.api.IDiscordClient;
+import net.dv8tion.jda.bot.sharding.DefaultShardManagerBuilder;
+import net.dv8tion.jda.bot.sharding.ShardManager;
 
 public class ResonantBot {
 
@@ -21,9 +25,7 @@ public class ResonantBot {
 
 	private static HashMap<String, String> args;
 	private static String directory;
-	private static IDiscordClient client;
-	
-	private static boolean ready = false;
+	private static ShardManager client;
 
 	public static void main(String[] args) throws InterruptedException {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -32,8 +34,12 @@ public class ResonantBot {
 				log.info("Shutting down!");
 				Config.saveData();
 				log.info("Configuration saved!");
+				ArrayList<String> names = new ArrayList<String>();
 				for (Plugin p : PluginManager.getPlugins()) {
-					PluginManager.unload(p);
+					names.add(p.getName());
+				}
+				for (String n : names) {
+					PluginManager.unload(n);
 				}
 				log.info("Plugins unloaded!");
 			}
@@ -43,7 +49,7 @@ public class ResonantBot {
 			public void run() {
 				log.info("Logging out!");
 				if (client != null) {
-					client.logout();
+					client.shutdown();
 				}
 			}
 		});
@@ -100,17 +106,13 @@ public class ResonantBot {
 			Config.save();
 		}
 		new File(directory, "plugins").mkdir();
-		client = BotUtils.getBuiltDiscordClient(Config.getToken());
-		client.getDispatcher().registerListeners(new MessageListener(), new ReadyListener(), new ConnectionListener());
-		PluginManager.reload();
-		client.login();
-	}
-	
-	protected static void ready() {
-		if (!ready) {
-			ready = true;
-			client.getDispatcher().registerListener(new GuildListener());
+		try {
+			client = new DefaultShardManagerBuilder().setToken(Config.getToken()).setGame(Config.getGame()).build();
+		} catch (LoginException e) {
+			e.printStackTrace();
 		}
+		client.addEventListener(new MessageListener(), new ReadyListener(), new ConnectionListener(), new GuildListener());
+		PluginManager.reload();
 	}
 
 	public static String getArg(String arg) {
@@ -125,19 +127,12 @@ public class ResonantBot {
 		return directory;
 	}
 
-	public static IDiscordClient getClient() {
+	public static ShardManager getClient() {
 		return client;
 	}
 
 	public static Logger getLogger() {
 		return log;
-	}
-	
-	public static String getStatusMessage() {
-		if (client != null)
-			return client.getGuilds().size() + " Servers | " + Config.getPrefix() + "help";
-		else
-			return Config.getPrefix() + "help";
 	}
 
 }

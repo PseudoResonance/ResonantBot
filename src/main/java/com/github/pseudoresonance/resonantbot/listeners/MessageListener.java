@@ -4,25 +4,25 @@ import java.util.HashMap;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-import com.github.pseudoresonance.resonantbot.BotUtils;
 import com.github.pseudoresonance.resonantbot.CommandManager;
 import com.github.pseudoresonance.resonantbot.Config;
 import com.github.pseudoresonance.resonantbot.api.Command;
 
-import sx.blah.discord.api.events.EventSubscriber;
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
-import sx.blah.discord.handle.obj.IGuild;
+import net.dv8tion.jda.core.entities.ChannelType;
+import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
-public class MessageListener {
+public class MessageListener extends ListenerAdapter {
 	
 	private static HashMap<Long, String> prefixes = new HashMap<Long, String>();
 
-	@EventSubscriber
+	@Override
 	public void onMessageReceived(MessageReceivedEvent e) {
 		if (e.getAuthor().isBot()) {
 			return;
 		}
-		String message = e.getMessage().getContent();
+		String message = e.getMessage().getContentRaw();
 		String prefix = getPrefix(e.getGuild());
 		if (message.startsWith(prefix)) {
 			String command = message.substring(prefix.length());
@@ -41,18 +41,18 @@ public class MessageListener {
 			}
 			return;
 		}
-		if (message.startsWith("<@" + e.getClient().getOurUser().getStringID() + ">")) {
-			if (e.getChannel().isPrivate()) {
-				BotUtils.sendMessage(e.getChannel(), "The prefix for DMs is `" + Config.getPrefix() + "`");
+		if (message.startsWith("<@" + e.getJDA().getSelfUser().getId() + ">")) {
+			if (e.getChannelType() == ChannelType.PRIVATE) {
+				e.getChannel().sendMessage("The prefix for DMs is `" + Config.getPrefix() + "`").queue();
 			} else {
-				BotUtils.sendMessage(e.getChannel(), "The prefix for " + e.getGuild().getName() + " is `" + getPrefix(e.getGuild()) + "`");
+				e.getChannel().sendMessage("The prefix for " + e.getGuild().getName() + " is `" + getPrefix(e.getGuild()) + "`").queue();
 			}
 		}
 	}
 	
-	public static String getPrefix(IGuild guild) {
+	public static String getPrefix(Guild guild) {
 		if (guild != null) {
-			String prefix = prefixes.get(guild.getLongID());
+			String prefix = prefixes.get(guild.getIdLong());
 			if (prefix != null)
 				return prefix;
 		}

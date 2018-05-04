@@ -1,23 +1,20 @@
 package com.github.pseudoresonance.resonantbot.listeners;
 
-import com.github.pseudoresonance.resonantbot.ResonantBot;
+import com.github.pseudoresonance.resonantbot.Config;
+import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
+import net.dv8tion.jda.core.events.guild.GuildLeaveEvent;
+import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
-import sx.blah.discord.api.events.EventSubscriber;
-import sx.blah.discord.handle.impl.events.guild.GuildCreateEvent;
-import sx.blah.discord.handle.impl.events.guild.GuildLeaveEvent;
-import sx.blah.discord.handle.obj.ActivityType;
-import sx.blah.discord.handle.obj.StatusType;
+public class GuildListener extends ListenerAdapter {
 
-public class GuildListener {
-
-	@EventSubscriber
-	public void onGuildCreate(GuildCreateEvent e) {
-		e.getClient().changePresence(StatusType.ONLINE, ActivityType.LISTENING, ResonantBot.getStatusMessage());
+	@Override
+	public void onGuildJoin(GuildJoinEvent e) {
+		Config.updateStatus();
 	}
 
-	@EventSubscriber
+	@Override
 	public void onGuildLeave(GuildLeaveEvent e) {
-		e.getClient().changePresence(StatusType.ONLINE, ActivityType.LISTENING, ResonantBot.getStatusMessage());
+		Config.updateStatus();
 	}
 
 }

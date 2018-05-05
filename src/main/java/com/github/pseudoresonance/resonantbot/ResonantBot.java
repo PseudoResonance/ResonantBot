@@ -33,6 +33,8 @@ public class ResonantBot {
 			public void run() {
 				log.info("Shutting down!");
 				Config.saveData();
+				log.info("Data saved!");
+				Config.save();
 				log.info("Configuration saved!");
 				ArrayList<String> names = new ArrayList<String>();
 				for (Plugin p : PluginManager.getPlugins()) {

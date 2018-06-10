@@ -83,7 +83,7 @@ public class Config {
 	}
 
 	public static void setOwner(String owner) {
-		Config.owner = Long.valueOf(owner);
+		setOwner(Long.valueOf(owner));
 	}
 
 	public static long getOwner() {
@@ -182,28 +182,22 @@ public class Config {
 				fs.close();
 				try {
 					token = config.getString("token");
-				} catch (NullPointerException e) {
-				}
+				} catch (NullPointerException e) {}
 				try {
 					prefix = config.getString("prefix");
-				} catch (NullPointerException e) {
-				}
+				} catch (NullPointerException e) {}
 				try {
 					name = config.getString("name");
-				} catch (NullPointerException e) {
-				}
+				} catch (NullPointerException e) {}
 				try {
-					owner = Long.valueOf(config.getString("owner"));
-				} catch (NullPointerException e) {
-				}
+					owner = config.getJsonNumber("owner").longValueExact();
+				} catch (NullPointerException e) {}
 				try {
 					status = config.getString("status");
-				} catch (NullPointerException e) {
-				}
+				} catch (NullPointerException e) {}
 				try {
 					statusType = Game.GameType.valueOf(config.getString("statusType").toUpperCase());
-				} catch (NullPointerException e) {
-				}
+				} catch (NullPointerException e) {}
 				conf = null;
 				Config.map = toMap(config);
 			} catch (IOException e) {

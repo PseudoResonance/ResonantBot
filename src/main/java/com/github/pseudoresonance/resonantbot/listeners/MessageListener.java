@@ -60,7 +60,10 @@ public class MessageListener extends ListenerAdapter {
 	}
 	
 	public static void setPrefix(Long guild, String prefix) {
-		prefixes.put(guild, prefix);
+		if (prefix.equals(Config.getPrefix()))
+			prefixes.remove(guild);
+		else
+			prefixes.put(guild, prefix);
 		Config.saveData();
 	}
 	

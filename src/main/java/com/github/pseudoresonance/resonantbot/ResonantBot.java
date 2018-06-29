@@ -109,7 +109,7 @@ public class ResonantBot {
 		}
 		new File(directory, "plugins").mkdir();
 		try {
-			client = new DefaultShardManagerBuilder().setToken(Config.getToken()).setGame(Config.getGame()).build();
+			client = new DefaultShardManagerBuilder().setMaxReconnectDelay(32).setToken(Config.getToken()).setGame(Config.getGame()).build();
 		} catch (LoginException e) {
 			e.printStackTrace();
 		}

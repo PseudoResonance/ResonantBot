@@ -23,6 +23,7 @@ import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
+import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.json.JsonWriter;
 
@@ -182,22 +183,28 @@ public class Config {
 				fs.close();
 				try {
 					token = config.getString("token");
-				} catch (NullPointerException e) {}
+				} catch (NullPointerException e) {
+				}
 				try {
 					prefix = config.getString("prefix");
-				} catch (NullPointerException e) {}
+				} catch (NullPointerException e) {
+				}
 				try {
 					name = config.getString("name");
-				} catch (NullPointerException e) {}
+				} catch (NullPointerException e) {
+				}
 				try {
 					owner = config.getJsonNumber("owner").longValueExact();
-				} catch (NullPointerException e) {}
+				} catch (NullPointerException e) {
+				}
 				try {
 					status = config.getString("status");
-				} catch (NullPointerException e) {}
+				} catch (NullPointerException e) {
+				}
 				try {
 					statusType = Game.GameType.valueOf(config.getString("statusType").toUpperCase());
-				} catch (NullPointerException e) {}
+				} catch (NullPointerException e) {
+				}
 				conf = null;
 				Config.map = toMap(config);
 			} catch (IOException e) {
@@ -272,51 +279,55 @@ public class Config {
 			e.printStackTrace();
 		}
 	}
-	
-    public static HashMap<String, Object> jsonToMap(JsonObject json) {
-    	HashMap<String, Object> retMap = new HashMap<String, Object>();
 
-        if(json != JsonObject.NULL) {
-            retMap = toMap(json);
-        }
-        return retMap;
-    }
+	public static HashMap<String, Object> jsonToMap(JsonObject json) {
+		HashMap<String, Object> retMap = new HashMap<String, Object>();
 
-    public static HashMap<String, Object> toMap(JsonObject object) throws JsonException {
-    	HashMap<String, Object> map = new HashMap<String, Object>();
+		if (json != JsonObject.NULL) {
+			retMap = toMap(json);
+		}
+		return retMap;
+	}
 
-        Iterator<String> keysItr = object.keySet().iterator();
-        while(keysItr.hasNext()) {
-            String key = keysItr.next();
-            Object value = object.get(key);
+	public static HashMap<String, Object> toMap(JsonObject object) throws JsonException {
+		HashMap<String, Object> map = new HashMap<String, Object>();
 
-            if(value instanceof JsonArray) {
-                value = toList((JsonArray) value);
-            }
+		Iterator<String> keysItr = object.keySet().iterator();
+		while (keysItr.hasNext()) {
+			String key = keysItr.next();
+			Object value = object.get(key);
 
-            else if(value instanceof JsonObject) {
-                value = toMap((JsonObject) value);
-            }
-            map.put(key, value);
-        }
-        return map;
-    }
+			if (value instanceof JsonArray) {
+				value = toList((JsonArray) value);
+			}
 
-    public static ArrayList<Object> toList(JsonArray array) {
-        ArrayList<Object> list = new ArrayList<Object>();
-        for(int i = 0; i < array.size(); i++) {
-            Object value = array.get(i);
-            if(value instanceof JsonArray) {
-                value = toList((JsonArray) value);
-            }
+			else if (value instanceof JsonObject) {
+				value = toMap((JsonObject) value);
+			}
 
-            else if(value instanceof JsonObject) {
-                value = toMap((JsonObject) value);
-            }
-            list.add(value);
-        }
-        return list;
-    }
+			else if (value instanceof JsonString) {
+				value = ((JsonString) value).getString();
+			}
+			map.put(key, value);
+		}
+		return map;
+	}
+
+	public static ArrayList<Object> toList(JsonArray array) {
+		ArrayList<Object> list = new ArrayList<Object>();
+		for (int i = 0; i < array.size(); i++) {
+			Object value = array.get(i);
+			if (value instanceof JsonArray) {
+				value = toList((JsonArray) value);
+			}
+
+			else if (value instanceof JsonObject) {
+				value = toMap((JsonObject) value);
+			}
+			list.add(value);
+		}
+		return list;
+	}
 
 	public static boolean containsKey(Object key) {
 		return map.containsKey(key);

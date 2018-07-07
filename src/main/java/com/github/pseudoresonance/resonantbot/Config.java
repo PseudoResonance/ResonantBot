@@ -38,6 +38,7 @@ public class Config {
 	private static String prefix = "|";
 	private static String name = "ResonantBot";
 	private static long owner = 0;
+	private static String lang = "en-US";
 	private static String status = "%servers% Servers | %prefix%help";
 	private static Game.GameType statusType = Game.GameType.LISTENING;
 
@@ -89,6 +90,15 @@ public class Config {
 
 	public static long getOwner() {
 		return owner;
+	}
+
+	public static void setLang(String lang) {
+		Config.lang = lang;
+		map.put("lang", lang);
+	}
+
+	public static String getLang() {
+		return lang;
 	}
 
 	public static void setStatus(String status) {
@@ -164,6 +174,23 @@ public class Config {
 			json.writeObject(prefix);
 			json.close();
 			os.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+		JsonObjectBuilder langsBuild = Json.createObjectBuilder();
+		HashMap<Long, String> langs = Language.getGuildLangs();
+		for (Long p : langs.keySet()) {
+			langsBuild.add(String.valueOf(p), langs.get(p));
+		}
+		JsonObject lang = langsBuild.build();
+		File lan = new File(dir, "guildLangs.json");
+		try {
+			FileOutputStream os = new FileOutputStream(lan);
+			JsonWriter json = Json.createWriter(os);
+			json.writeObject(lang);
+			json.close();
+			os.close();
 			return true;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -198,6 +225,10 @@ public class Config {
 				} catch (NullPointerException e) {
 				}
 				try {
+					lang = config.getString("lang");
+				} catch (NullPointerException e) {
+				}
+				try {
 					status = config.getString("status");
 				} catch (NullPointerException e) {
 				}
@@ -226,12 +257,35 @@ public class Config {
 				for (String k : prefix.keySet()) {
 					try {
 						prefixes.put(Long.valueOf(k), prefix.getString(k));
-					} catch (NumberFormatException e) {
-					}
+					} catch (NumberFormatException e) {}
 				}
 				prefix = null;
 				pre = null;
 				MessageListener.setPrefixes(prefixes);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (JsonException e) {
+				return;
+			}
+		}
+		File lan = new File(ResonantBot.getDir() + File.separator + "data", "guildLangs.json");
+		if (lan.exists()) {
+			try {
+				FileInputStream fs = new FileInputStream(lan);
+				JsonReader json = Json.createReader(fs);
+				JsonObject lang = json.readObject();
+				json.close();
+				fs.close();
+				fs.close();
+				HashMap<Long, String> langs = new HashMap<Long, String>();
+				for (String k : lang.keySet()) {
+					try {
+						langs.put(Long.valueOf(k), lang.getString(k));
+					} catch (NumberFormatException e) {}
+				}
+				lang = null;
+				lan = null;
+				Language.setGuildLangs(langs);
 			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (JsonException e) {

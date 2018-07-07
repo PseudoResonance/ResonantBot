@@ -1,12 +1,19 @@
 package com.github.pseudoresonance.resonantbot.api;
 
+import java.io.File;
+
+import com.github.pseudoresonance.resonantbot.PluginManager;
+
 public abstract class Plugin {
 
 	private boolean isEnabled = false;
 	private final ClassLoader classLoader;
 	private String name;
+	private File folder;
 	
 	public Plugin() {
+		this.name = this.getClass().getSimpleName();
+		this.folder = new File(PluginManager.getDir(), name);
 		this.classLoader = this.getClass().getClassLoader();
 	}
 
@@ -14,7 +21,7 @@ public abstract class Plugin {
 
 	public abstract void onDisable();
 
-	public String getName() {
+	public final String getName() {
 		return this.name;
 	}
 
@@ -33,12 +40,17 @@ public abstract class Plugin {
 		}
 	}
 	
-	public void init(String name) {
-		this.name = name;
+	public final File getFolder() {
+		return this.folder;
 	}
 
 	public final ClassLoader getClassLoader() {
 		return this.classLoader;
+	}
+	
+	protected final void init(String name, File folder) {
+		this.name = name;
+		this.folder = folder;
 	}
 
 }

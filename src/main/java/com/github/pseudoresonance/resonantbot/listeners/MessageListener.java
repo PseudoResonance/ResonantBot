@@ -6,6 +6,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import com.github.pseudoresonance.resonantbot.CommandManager;
 import com.github.pseudoresonance.resonantbot.Config;
+import com.github.pseudoresonance.resonantbot.Language;
 import com.github.pseudoresonance.resonantbot.api.Command;
 
 import net.dv8tion.jda.core.entities.ChannelType;
@@ -43,9 +44,9 @@ public class MessageListener extends ListenerAdapter {
 		}
 		if (message.startsWith("<@" + e.getJDA().getSelfUser().getId() + ">")) {
 			if (e.getChannelType() == ChannelType.PRIVATE) {
-				e.getChannel().sendMessage("The prefix for DMs is `" + Config.getPrefix() + "`").queue();
+				e.getChannel().sendMessage(Language.getMessage("main.privatePrefix", Config.getPrefix())).queue();
 			} else {
-				e.getChannel().sendMessage("The prefix for " + e.getGuild().getName() + " is `" + getPrefix(e.getGuild()) + "`").queue();
+				e.getChannel().sendMessage(Language.getMessage("main.prefix", e.getGuild().getName(), getPrefix(e.getGuild()))).queue();
 			}
 		}
 	}

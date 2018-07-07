@@ -6,7 +6,7 @@ public interface Command {
 	
 	public void onCommand(MessageReceivedEvent e, String command, String[] args);
 	
-	public String getDesc();
+	public String getDesc(long guildID);
 	
 	public boolean isHidden();
 

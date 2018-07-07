@@ -19,11 +19,14 @@ public final class PluginFileLoader {
 
 	public static Plugin loadPlugin(File file) throws IOException {
 		if (!file.exists()) {
-			throw new FileNotFoundException(file.getPath() + " does not exist");
+			throw new FileNotFoundException(Language.getMessage("main.doesNotExist", file.getPath()));
 		} else {
 			PluginClassLoader loader = null;
 			try {
 				loader = new PluginClassLoader(PluginFileLoader.class.getClassLoader(), file);
+			} catch (IllegalStateException e) {
+				ResonantBot.getLogger().error(Language.getMessage("main.genericLoadingError", file.getName()) + "\n", e);
+				throw e;
 			} catch (IOException e) {
 				throw e;
 			}
@@ -60,30 +63,30 @@ public final class PluginFileLoader {
 
 	public static void enablePlugin(Plugin plugin) {
 		if (!plugin.isEnabled()) {
-			ResonantBot.getLogger().info("Enabling plugin: " + plugin.getName());
+			ResonantBot.getLogger().info(Language.getMessage("main.enablingPlugin", plugin.getName()));
 			Plugin plug = (Plugin) plugin;
 			PluginClassLoader pluginLoader = (PluginClassLoader) plug.getClassLoader();
 			if (!loaders.contains(pluginLoader)) {
 				loaders.add(pluginLoader);
-				ResonantBot.getLogger().info("Enabling plugin with unregistered PluginClassLoader: " + plugin.getName());
+				ResonantBot.getLogger().info(Language.getMessage("main.enablingPluginUnregisteredLoader", plugin.getName()));
 			}
 			try {
 				plug.setEnabled(true);
 			} catch (Throwable arg4) {
-				ResonantBot.getLogger().warn("Error occurred while enabling: " + plugin.getName());
+				ResonantBot.getLogger().warn(Language.getMessage("main.enablingPluginError", plugin.getName()));
 			}
 		}
 	}
 
 	public static void disablePlugin(Plugin plugin) {
 		if (plugin.isEnabled()) {
-			ResonantBot.getLogger().info("Disabling plugin: " + plugin.getName());
+			ResonantBot.getLogger().info(Language.getMessage("main.disablingPlugin", plugin.getName()));
 			Plugin plug = (Plugin) plugin;
 			ClassLoader cloader = plug.getClassLoader();
 			try {
 				plug.setEnabled(false);
 			} catch (Throwable arg4) {
-				ResonantBot.getLogger().warn("Error occurred while disabling: " + plugin.getName());
+				ResonantBot.getLogger().warn(Language.getMessage("main.disablingPluginError", plugin.getName()));
 			}
 			if (cloader instanceof PluginClassLoader) {
 				PluginClassLoader loader = (PluginClassLoader) cloader;

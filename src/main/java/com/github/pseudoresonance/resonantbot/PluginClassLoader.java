@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -38,38 +40,44 @@ public final class PluginClassLoader extends URLClassLoader {
 				try {
 					mainClass = jo.getString("Main");
 				} catch (NullPointerException e) {
-					ResonantBot.getLogger().error("No main class in plugin.json in plugin: " + file.getName());
+					ResonantBot.getLogger().error(Language.getMessage("main.noMainClass", file.getName()));
 				}
 				try {
 					name = jo.getString("Name");
 				} catch (NullPointerException e) {
-					ResonantBot.getLogger().error("No name in plugin.json in plugin: " + file.getName());
+					ResonantBot.getLogger().error(Language.getMessage("main.noName", file.getName()));
 				}
 				try {
+					Class<?> ex;
 					try {
-						Class<?> ex = Class.forName(mainClass, true, this);
-						try {
-							Class<?> pluginClass = ex.asSubclass(Plugin.class);
-							plug = (Plugin) pluginClass.getDeclaredConstructor().newInstance();
-							plug.init(name);
-						} catch (ClassCastException exc) {
-							ResonantBot.getLogger().error("Class: " + mainClass + " does not extend plugin!", exc);
-						}
+						ex = Class.forName(mainClass, true, this);
 					} catch (ClassNotFoundException exc) {
-						ResonantBot.getLogger().error("Invalid main class: " + mainClass + " in plugin: " + file.getName(), exc);
+						throw new IllegalStateException(Language.getMessage("main.invalidMainClass", mainClass));
 					}
+					File folder = new File(PluginManager.getDir(), name);
+					Class<?> pluginClass;
+					try {
+						pluginClass = ex.asSubclass(Plugin.class);
+					} catch (ClassCastException exc) {
+						throw new IllegalStateException(Language.getMessage("main.doesNotExtendPlugin", mainClass));
+					}
+					Constructor<?> constructor = pluginClass.getConstructor();
+					plug = (Plugin) constructor.newInstance();
+					Method initMethod = pluginClass.getSuperclass().getDeclaredMethod("init", String.class, File.class);
+					initMethod.setAccessible(true);
+					initMethod.invoke(plug, name, folder);
 
 				} catch (IllegalAccessException e) {
-					ResonantBot.getLogger().error("Main class has no public constructor in plugin: " + file.getName(), e);
+					throw new IllegalStateException(Language.getMessage("main.noPublicConstructor", file.getName()), e);
 				} catch (InstantiationException e) {
-					ResonantBot.getLogger().error("Abnormal type while loading plugin: " + file.getName(), e);
+					throw new IllegalStateException(Language.getMessage("main.abnormalType", file.getName()), e);
 				} catch (Exception e) {
-					ResonantBot.getLogger().error("Error while loading plugin: " + file.getName(), e);
+					throw new IllegalStateException(Language.getMessage("main.genericLoadingError", file.getName()), e);
 				} catch (OutOfMemoryError e) {
-					ResonantBot.getLogger().error("Error while loading plugin: " + file.getName(), e);
+					ResonantBot.getLogger().error(Language.getMessage("main.outOfMemory", file.getName()) + "\n", e);
 					System.exit(1);
 				} catch (Error e) {
-					ResonantBot.getLogger().error("Error while loading plugin: " + file.getName(), e);
+					throw new IllegalStateException(Language.getMessage("main.genericLoadingError", file.getName()), e);
 				}
 			}
 		}
@@ -115,6 +123,9 @@ public final class PluginClassLoader extends URLClassLoader {
 			e.printStackTrace();
 		}
 	}
+	public JarFile getJar() {
+		return this.jar;
+	}
 
 	Set<String> getClasses() {
 		return this.classes.keySet();
@@ -127,6 +138,6 @@ public final class PluginClassLoader extends URLClassLoader {
 				return zin;
 			}
 		}
-		throw new EOFException("Cannot find " + entry);
+		throw new EOFException(Language.getMessage("main.cannotFind", entry));
 	}
 }

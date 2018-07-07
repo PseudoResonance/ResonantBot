@@ -1,6 +1,7 @@
 package com.github.pseudoresonance.resonantbot;
 
 import java.util.HashMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.simpleyaml.configuration.file.YamlConfiguration;
@@ -19,6 +20,9 @@ public class Language {
 	private static String dateFormat = "";
 	private static String dateTimeFormat = "";
 	private static String timeFormat = "";
+	
+	private final static Pattern escapePattern = Pattern.compile("([*_~`\\\\])");
+	private final static Pattern prefixPattern = Pattern.compile("[^ -\"$-.0-?A-\\[\\]\\^a-~]");
 	
 	public static void updateAllLang() {
 		updateLang(Config.getLang());
@@ -198,6 +202,17 @@ public class Language {
 				updateGuildLang(l);
 			}
 		}
+	}
+	
+	public static String escape(Object toEscape) {
+		String esc = toEscape.toString();
+		Matcher m = escapePattern.matcher(esc);
+		String ret = m.replaceAll("\\\\$1");
+		return ret;
+	}
+	
+	public static boolean isValidPrefix(String prefix) {
+		return !prefixPattern.matcher(prefix).find();
 	}
 
 }

@@ -80,6 +80,7 @@ public class ResonantBot {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
+				saveTimer.cancel();
 				log.info("Shutting down!");
 				Config.saveData();
 				log.info("Data saved!");

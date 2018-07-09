@@ -12,7 +12,6 @@ public class Language {
 	private static HashMap<String, YamlConfiguration> yamls = new HashMap<String, YamlConfiguration>();
 	private static HashMap<Long, String> guildLangs = new HashMap<Long, String>();
 	
-	private final static Pattern pattern = Pattern.compile("\\{\\$\\$\\}");
 	private final static Pattern dateFormatPattern = Pattern.compile("\\{\\$date\\$\\}");
 	private final static Pattern dateTimeFormatPattern = Pattern.compile("\\{\\$dateTime\\$\\}");
 	private final static Pattern timeFormatPattern = Pattern.compile("\\{\\$time\\$\\}");
@@ -92,7 +91,7 @@ public class Language {
 				}
 			}
 			for (int i = 0; i < args.length; i++) {
-				ret = pattern.matcher(ret).replaceFirst(args[i].toString());
+				ret = Pattern.compile("\\{\\$" + (i + 1) + "\\$\\}").matcher(ret).replaceFirst(args[i].toString());
 			}
 			ret = dateFormatPattern.matcher(ret).replaceFirst(yaml.getString("dateFormatExplanation"));
 			ret = dateTimeFormatPattern.matcher(ret).replaceFirst(yaml.getString("dateTimeFormatExplanation"));
@@ -116,7 +115,7 @@ public class Language {
 					}
 				}
 				for (int i = 0; i < args.length; i++) {
-					ret = pattern.matcher(ret).replaceFirst(args[i].toString());
+					ret = Pattern.compile("\\{\\$" + (i + 1) + "\\$\\}").matcher(ret).replaceFirst(args[i].toString());
 				}
 				ret = dateFormatPattern.matcher(ret).replaceFirst(yaml.getString("dateFormatExplanation"));
 				ret = dateTimeFormatPattern.matcher(ret).replaceFirst(yaml.getString("dateTimeFormatExplanation"));
@@ -132,7 +131,7 @@ public class Language {
 				}
 			}
 			for (int i = 0; i < args.length; i++) {
-				ret = pattern.matcher(ret).replaceFirst(args[i].toString());
+				ret = Pattern.compile("\\{\\$" + (i + 1) + "\\$\\}").matcher(ret).replaceFirst(args[i].toString());
 			}
 			ret = dateFormatPattern.matcher(ret).replaceFirst(yaml.getString("dateFormatExplanation"));
 			ret = dateTimeFormatPattern.matcher(ret).replaceFirst(yaml.getString("dateTimeFormatExplanation"));

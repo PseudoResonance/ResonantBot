@@ -24,7 +24,7 @@ main:
   disablingPluginError: "{$1$}　のプラグインを無効中にエラーが発生しました"
   enablingPlugin: "{$1$}　のプラグインを有効化中"
   disablingPlugin: "{$1$}　のプラグインを無効中"
-  enablingPluginUnregisteredLoader: "登録されてないクラスローダーのプラグインを有効化中: {$1$}"
+  enablingPluginUnregisteredLoader: "登録されてないクラスローダーのプラグインを有効化中： {$1$}"
   foundPluginJar: "{$1$}　のプラグインのジャーファイルを見つけた"
   loadingPluginJar: "{$1$}　のプラグインのジャーファイルをロード中"
   errorLoadingJar: "{$1$}　のプラグインのジャーファイルがロード中にエラーが発生しました"

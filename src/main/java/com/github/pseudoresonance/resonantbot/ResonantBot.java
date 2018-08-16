@@ -4,13 +4,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
+
 import javax.security.auth.login.LoginException;
 
 import org.simpleyaml.configuration.file.YamlConfiguration;
@@ -42,40 +47,47 @@ public class ResonantBot {
 		directory = Startup.init();
 		langDir = new File(directory + File.separator + "localization");
 		langDir.mkdir();
-		try (InputStream is = ResonantBot.class.getClassLoader().getResourceAsStream("localization/en-US.lang")) {
-			if (is != null) {
-				File dest = new File(langDir, "en-US.lang");
-				if (!dest.exists()) {
-					Files.copy(is, dest.toPath());
-				}
-			} else {
-				if (ResonantBot.class.getResource("ResonantBot.class").toString().startsWith("file")) {
-					File enUS = new File(directory + "/src/main/resources/localization/en-US.lang");
-					File dest = new File(langDir, "en-US.lang");
-					if (!dest.exists()) {
-						Files.copy(new FileInputStream(enUS), dest.toPath());
+		boolean copied = false;
+		if (ResonantBot.class.getResource("ResonantBot.class").toString().startsWith("file")) {
+			try (JarFile jar = new JarFile(new File(ResonantBot.class.getProtectionDomain().getCodeSource().getLocation().toURI()))) {
+				Enumeration<? extends ZipEntry> entries = jar.entries();
+				while (entries.hasMoreElements()) {
+					ZipEntry entry = entries.nextElement();
+					if (entry.getName().startsWith("localization/") && entry.getName().endsWith(".lang")) {
+						try (InputStream is = jar.getInputStream(entry)) {
+							if (is != null) {
+								String name = entry.getName().substring(13, entry.getName().length());
+								File dest = new File(langDir, name);
+								if (!dest.exists()) {
+									Files.copy(is, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+									copied = true;
+								}
+							}
+						} catch (IOException | NullPointerException e) {}
 					}
-				} else {
-					log.error("Could not find default en-US language files! Please download a fresh copy of this bot! Shutting down!");
-					System.exit(1);
+				}
+			} catch (IOException | URISyntaxException e) {}
+		}
+		if (!copied) {
+			File dir = new File(directory + "/src/main/resources/localization/");
+			for (File f : dir.listFiles()) {
+				if (f.isFile() && f.getName().endsWith(".lang")) {
+					File dest = new File(langDir, f.getName());
+					try {
+						Files.copy(f.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+					} catch (IOException e) {}
 				}
 			}
-		} catch (IOException e) {
-			if (ResonantBot.class.getResource("ResonantBot.class").toString().startsWith("file")) {
-				File enUS = new File(directory + "/src/main/resources/localization/en-US.lang");
-				File dest = new File(langDir, "en-US.lang");
-				try {
-					if (!dest.exists()) {
-						Files.copy(new FileInputStream(enUS), dest.toPath());
-					}
-				} catch (IOException e1) {
-					log.error("Could not find default en-US language files! Please download a fresh copy of this bot! Shutting down!");
-					System.exit(1);
-				}
-			} else {
-				log.error("Could not find default en-US language files! Please download a fresh copy of this bot! Shutting down!");
-				System.exit(1);
+		}
+		boolean found = false;
+		for (File f : langDir.listFiles()) {
+			if (f.isFile() && f.getName().endsWith(".lang")) {
+				found = true;
 			}
+		}
+		if (!found) {
+			log.error("Could not find default en-US language files! Please download a fresh copy of this bot! Shutting down!");
+			System.exit(1);
 		}
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override

@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
@@ -213,39 +214,6 @@ public class PluginManager {
 	
 	public static YamlConfiguration getLanguage(Plugin plugin, String name, boolean overwrite) {
 		File lang = new File(plugin.getFolder(), "localization/" + name + ".lang");
-		if (!lang.isFile() || overwrite) {
-			JarFile jar = ((PluginClassLoader) plugin.getClass().getClassLoader()).getJar();
-			ZipEntry entry = jar.getEntry("localization/" + name + ".lang");
-			try (InputStream is = jar.getInputStream(entry)) {
-				if (is != null) {
-					try {
-						plugin.getFolder().mkdir();
-						new File(plugin.getFolder(), "localization").mkdir();
-						Files.copy(is, lang.toPath(), StandardCopyOption.REPLACE_EXISTING);
-					} catch (IOException e) {
-						ResonantBot.getLogger().error("Could not copy " + plugin.getName() + " plugin localization! Please report this error to the author!");
-					}
-				}
-			} catch (IOException | NullPointerException e) {}
-		}
-		if (!lang.exists()) {
-			if (!name.equals("en-US")) {
-				JarFile jar = ((PluginClassLoader) plugin.getClass().getClassLoader()).getJar();
-				ZipEntry entry = jar.getEntry("localization/en-US.lang");
-				try (InputStream is = jar.getInputStream(entry)) {
-					if (is != null) {
-						File langDir = new File(plugin.getFolder(), "localization");
-						langDir.mkdir();
-						File dest = new File(langDir, "en-US.lang");
-						if (!dest.exists() || overwrite) {
-							plugin.getFolder().mkdir();
-							new File(plugin.getFolder(), "localization").mkdir();
-							Files.copy(is, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
-						}
-					}
-				} catch (IOException | NullPointerException e) {}
-			}
-		}
 		YamlConfiguration yaml = YamlConfiguration.loadConfiguration(lang);
 		return yaml;
 	}
@@ -256,18 +224,24 @@ public class PluginManager {
 	
 	public static void copyDefaultLang(Plugin plugin, boolean overwrite) {
 		JarFile jar = ((PluginClassLoader) plugin.getClass().getClassLoader()).getJar();
-		ZipEntry entry = jar.getEntry("localization/en-US.lang");
-		try (InputStream is = jar.getInputStream(entry)) {
-			if (is != null) {
-				File langDir = new File(plugin.getFolder(), "localization");
-				plugin.getFolder().mkdir();
-				langDir.mkdir();
-				File dest = new File(langDir, "en-US.lang");
-				if (!dest.exists() || overwrite) {
-					Files.copy(is, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
-				}
+		Enumeration<? extends ZipEntry> entries = jar.entries();
+		while (entries.hasMoreElements()) {
+			ZipEntry entry = entries.nextElement();
+			if (entry.getName().startsWith("localization/") && entry.getName().endsWith(".lang")) {
+				try (InputStream is = jar.getInputStream(entry)) {
+					if (is != null) {
+						File langDir = new File(plugin.getFolder(), "localization");
+						plugin.getFolder().mkdir();
+						langDir.mkdir();
+						String name = entry.getName().substring(13, entry.getName().length());
+						File dest = new File(langDir, name);
+						if (!dest.exists() || overwrite) {
+							Files.copy(is, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+						}
+					}
+				} catch (IOException | NullPointerException e) {}
 			}
-		} catch (IOException | NullPointerException e) {}
+		}
 	}
 	
 	public static void copyDefaultLang(Plugin plugin) {

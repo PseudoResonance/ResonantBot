@@ -47,35 +47,40 @@ public class ResonantBot {
 		directory = Startup.init();
 		langDir = new File(directory + File.separator + "localization");
 		langDir.mkdir();
-		boolean copied = false;
-		if (ResonantBot.class.getResource("ResonantBot.class").toString().startsWith("file")) {
-			try (JarFile jar = new JarFile(new File(ResonantBot.class.getProtectionDomain().getCodeSource().getLocation().toURI()))) {
-				Enumeration<? extends ZipEntry> entries = jar.entries();
-				while (entries.hasMoreElements()) {
-					ZipEntry entry = entries.nextElement();
-					if (entry.getName().startsWith("localization/") && entry.getName().endsWith(".lang")) {
-						try (InputStream is = jar.getInputStream(entry)) {
-							if (is != null) {
-								String name = entry.getName().substring(13, entry.getName().length());
-								File dest = new File(langDir, name);
-								copied = true;
-								if (!dest.exists()) {
-									Files.copy(is, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		boolean fromJar = false;
+		if (ResonantBot.class.getResource("ResonantBot.class").toString().startsWith("jar")) {
+			try {
+				File jf = new File(ResonantBot.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+				try (JarFile jar = new JarFile(jf)) {
+					Enumeration<? extends ZipEntry> entries = jar.entries();
+					while (entries.hasMoreElements()) {
+						fromJar = true;
+						ZipEntry entry = entries.nextElement();
+						if (entry.getName().startsWith("localization/") && entry.getName().endsWith(".lang")) {
+							try (InputStream is = jar.getInputStream(entry)) {
+								if (is != null) {
+									String name = entry.getName().substring(13, entry.getName().length());
+									File dest = new File(langDir, name);
+									if (!dest.exists()) {
+										Files.copy(is, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+									}
 								}
-							}
-						} catch (IOException | NullPointerException e) {}
+							} catch (IOException | NullPointerException e) {}
+						}
 					}
-				}
-			} catch (IOException | URISyntaxException e) {}
+				} catch (IOException e) {}
+			} catch (URISyntaxException e1) {}
 		}
-		if (!copied) {
+		if (!fromJar) {
 			File dir = new File(directory + "/src/main/resources/localization/");
-			for (File f : dir.listFiles()) {
-				if (f.isFile() && f.getName().endsWith(".lang")) {
-					File dest = new File(langDir, f.getName());
-					try {
-						Files.copy(f.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
-					} catch (IOException e) {}
+			if (dir.exists()) {
+				for (File f : dir.listFiles()) {
+					if (f.isFile() && f.getName().endsWith(".lang")) {
+						File dest = new File(langDir, f.getName());
+						try {
+							Files.copy(f.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+						} catch (IOException e) {}
+					}
 				}
 			}
 		}

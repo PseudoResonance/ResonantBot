@@ -58,9 +58,9 @@ public class ResonantBot {
 							if (is != null) {
 								String name = entry.getName().substring(13, entry.getName().length());
 								File dest = new File(langDir, name);
+								copied = true;
 								if (!dest.exists()) {
 									Files.copy(is, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
-									copied = true;
 								}
 							}
 						} catch (IOException | NullPointerException e) {}

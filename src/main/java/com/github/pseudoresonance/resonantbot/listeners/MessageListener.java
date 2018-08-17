@@ -44,9 +44,9 @@ public class MessageListener extends ListenerAdapter {
 		}
 		if (message.startsWith("<@" + e.getJDA().getSelfUser().getId() + ">")) {
 			if (e.getChannelType() == ChannelType.PRIVATE) {
-				e.getChannel().sendMessage(Language.getMessage("main.privatePrefix", Config.getPrefix())).queue();
+				e.getChannel().sendMessage(Language.getMessage(e.getGuild().getIdLong(), "main.privatePrefix", Config.getPrefix())).queue();
 			} else {
-				e.getChannel().sendMessage(Language.getMessage("main.prefix", e.getGuild().getName(), getPrefix(e.getGuild()))).queue();
+				e.getChannel().sendMessage(Language.getMessage(e.getGuild().getIdLong(), "main.prefix", e.getGuild().getName(), getPrefix(e.getGuild()))).queue();
 			}
 		}
 	}

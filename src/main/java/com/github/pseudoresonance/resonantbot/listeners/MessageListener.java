@@ -10,7 +10,7 @@ import com.github.pseudoresonance.resonantbot.Language;
 import com.github.pseudoresonance.resonantbot.api.Command;
 
 import net.dv8tion.jda.core.entities.ChannelType;
-import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.events.message.GenericMessageEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
@@ -24,7 +24,12 @@ public class MessageListener extends ListenerAdapter {
 			return;
 		}
 		String message = e.getMessage().getContentRaw();
-		String prefix = getPrefix(e.getGuild());
+		String prefix = "";
+		if (e.getChannelType() == ChannelType.PRIVATE) {
+			prefix = getPrefix(e.getPrivateChannel().getIdLong());
+		} else {
+			prefix = getPrefix(e.getGuild().getIdLong());
+		}
 		if (message.startsWith(prefix)) {
 			String command = message.substring(prefix.length());
 			String[] parts = command.split(" ");
@@ -44,19 +49,30 @@ public class MessageListener extends ListenerAdapter {
 		}
 		if (message.startsWith("<@" + e.getJDA().getSelfUser().getId() + ">")) {
 			if (e.getChannelType() == ChannelType.PRIVATE) {
-				e.getChannel().sendMessage(Language.getMessage(e.getGuild().getIdLong(), "main.privatePrefix", Config.getPrefix())).queue();
+				e.getChannel().sendMessage(Language.getMessage(e.getPrivateChannel().getIdLong(), "main.privatePrefix", getPrefix(e.getPrivateChannel().getIdLong()))).queue();
 			} else {
-				e.getChannel().sendMessage(Language.getMessage(e.getGuild().getIdLong(), "main.prefix", e.getGuild().getName(), getPrefix(e.getGuild()))).queue();
+				e.getChannel().sendMessage(Language.getMessage(e.getGuild().getIdLong(), "main.prefix", e.getGuild().getName(), getPrefix(e.getGuild().getIdLong()))).queue();
 			}
 		}
 	}
 	
-	public static String getPrefix(Guild guild) {
-		if (guild != null) {
-			String prefix = prefixes.get(guild.getIdLong());
-			if (prefix != null)
-				return prefix;
+	public static String getPrefix(Long guildId) {
+		String prefix = prefixes.get(guildId);
+		if (prefix != null)
+			return prefix;
+		return Config.getPrefix();
+	}
+	
+	public static String getPrefix(GenericMessageEvent e) {
+		Long id = 0L;
+		if (e.getChannelType() == ChannelType.PRIVATE) {
+			id = e.getPrivateChannel().getIdLong();
+		} else {
+			id = e.getGuild().getIdLong();
 		}
+		String prefix = prefixes.get(id);
+		if (prefix != null)
+			return prefix;
 		return Config.getPrefix();
 	}
 	

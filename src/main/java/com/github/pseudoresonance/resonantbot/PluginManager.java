@@ -75,22 +75,22 @@ public class PluginManager {
 			return Language.getMessage("main.jarNotFound", f.getName());
 	}
 	
-	public static String load(File f, boolean enable, long guildId) {
+	public static String load(File f, boolean enable, long id) {
 		ResonantBot.getLogger().info(Language.getMessage("main.loadingPluginJar", f.getName()));
 		Plugin p;
 		try {
 			p = PluginFileLoader.loadPlugin(f);
 		} catch (IOException e) {
 			e.printStackTrace();
-			if (guildId == -1)
+			if (id == -1)
 				return Language.getMessage("main.errorLoadingJar", f.getName());
 			else
-				return Language.getMessage(guildId, "main.errorLoadingJar", f.getName());
+				return Language.getMessage(id, "main.errorLoadingJar", f.getName());
 		} catch (IllegalStateException e) {
-			if (guildId == -1)
+			if (id == -1)
 				return Language.getMessage("main.errorLoadingJar", f.getName());
 			else
-				return Language.getMessage(guildId, "main.errorLoadingJar", f.getName());
+				return Language.getMessage(id, "main.errorLoadingJar", f.getName());
 		}
 		if (p != null) {
 			plugins.put(f, p);
@@ -101,15 +101,15 @@ public class PluginManager {
 			pluginNames.sort(String::compareToIgnoreCase);
 			copyDefaultLang(p);
 			Language.updateAllLang();
-			if (guildId == -1)
+			if (id == -1)
 				return Language.getMessage("main.completedLoadingPlugin", f.getName());
 			else
-				return Language.getMessage(guildId, "main.completedLoadingPlugin", f.getName());
+				return Language.getMessage(id, "main.completedLoadingPlugin", f.getName());
 		} else
-			if (guildId == -1)
+			if (id == -1)
 				return Language.getMessage("main.jarNotFound", f.getName());
 			else
-				return Language.getMessage(guildId, "main.jarNotFound", f.getName());
+				return Language.getMessage(id, "main.jarNotFound", f.getName());
 	}
 	
 	public static String load(File f, boolean enable) {
@@ -137,9 +137,9 @@ public class PluginManager {
 		return false;
 	}
 	
-	public static void reload(File f, MessageChannel chan, long guildId) {
+	public static void reload(File f, MessageChannel chan, long id) {
 		unload(plugins.get(f).getName());
-		String result = load(f, true, guildId);
+		String result = load(f, true, id);
 		chan.sendMessage(result).queue();
 	}
 	

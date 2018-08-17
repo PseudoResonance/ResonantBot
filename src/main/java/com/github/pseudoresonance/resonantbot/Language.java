@@ -6,6 +6,9 @@ import java.util.regex.Pattern;
 
 import org.simpleyaml.configuration.file.YamlConfiguration;
 
+import net.dv8tion.jda.core.entities.ChannelType;
+import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+
 public class Language {
 	
 	private static HashMap<String, YamlConfiguration> yamls = new HashMap<String, YamlConfiguration>();
@@ -83,8 +86,23 @@ public class Language {
 		return getMessage(Config.getLang(), key, args);
 	}
 	
-	public static String getMessage(Long guildID, String key, Object... args) {
-		String lang = guildLangs.get(guildID);
+	public static String getMessage(MessageReceivedEvent e, String key, Object... args) {
+		Long id = 0L;
+		if (e.getChannelType() == ChannelType.PRIVATE) {
+			id = e.getPrivateChannel().getIdLong();
+		} else {
+			id = e.getGuild().getIdLong();
+		}
+		String lang = guildLangs.get(id);
+		if (lang == null)
+			lang = Config.getLang();
+		return getMessage(lang, key, args);
+	}
+	
+	public static String getMessage(Long id, String key, Object... args) {
+		String lang = guildLangs.get(id);
+		if (lang == null)
+			lang = Config.getLang();
 		return getMessage(lang, key, args);
 	}
 	

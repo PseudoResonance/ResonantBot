@@ -184,7 +184,7 @@ public class ResonantBot {
 			Config.setLang(lang);
 			Config.save();
 		}
-		Language.updateLang(Config.getLang());
+		Language.updateAllLang();
 		new File(directory, "plugins").mkdir();
 		try {
 			client = new DefaultShardManagerBuilder().setMaxReconnectDelay(32).setToken(Config.getToken()).setGame(Config.getGame()).build();

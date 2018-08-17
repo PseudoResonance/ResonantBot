@@ -100,7 +100,7 @@ public class PluginManager {
 			pluginNames.add(p.getName());
 			pluginNames.sort(String::compareToIgnoreCase);
 			copyDefaultLang(p);
-			Language.updateLang(Config.getLang());
+			Language.updateAllLang();
 			if (guildId == -1)
 				return Language.getMessage("main.completedLoadingPlugin", f.getName());
 			else

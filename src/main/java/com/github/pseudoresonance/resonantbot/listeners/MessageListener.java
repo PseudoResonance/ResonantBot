@@ -32,7 +32,7 @@ public class MessageListener extends ListenerAdapter {
 		}
 		if (message.startsWith(prefix)) {
 			String command = message.substring(prefix.length());
-			String[] parts = command.split(" ");
+			String[] parts = command.split("\\s+");
 			Command c = CommandManager.getCommand(parts[0].toLowerCase());
 			if (c != null) {
 				try {

@@ -8,8 +8,8 @@ timeFormat: "H:mm:ss"
 timeFormatExplanation: "H:mm:ss"
 
 main:
-  privatePrefix: "ダイレクトメッセージのプレフェックスわ `{$1$}`"
-  prefix: "{$1$} のプレフェックスわ `{$2$}`"
+  privatePrefix: "ダイレクトメッセージのプレフィックスわ `{$1$}`"
+  prefix: "{$1$} のプレフィックスわ `{$2$}`"
   noMainClass: "{$1$}　プラグインのplugin.jsonわありません"
   noName: "{$1$}　プラグインの名前わありません"
   invalidMainClass: "{$1$} のメインクラスわ無効です"

@@ -34,3 +34,4 @@ main:
   noPage: "There is no page {$1$}!"
   requestedBy: "Requested By {$1$}"
   errorOccurred: "An error has occurred! Please contact the bot owner!"
+  validSubcommands: "Valid subcommands: {$1$}"

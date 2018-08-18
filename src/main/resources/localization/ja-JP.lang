@@ -34,3 +34,4 @@ main:
   noPage: "ページ{$1$}わありません！"
   requestedBy: "{$1$} によって要求された"
   errorOccurred: "エラーが発生しました！ボットの所有者に連絡して下さい！"
+  validSubcommands: "有効なサブコマンド：　{$1$}"

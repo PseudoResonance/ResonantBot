@@ -33,3 +33,4 @@ main:
   unloadedPluginInJar: "Unloaded plugin: {$1$} in jar: {$2$}"
   noPage: "There is no page {$1$}!"
   requestedBy: "Requested By {$1$}"
+  errorOccurred: "An error has occurred! Please contact the bot owner!"

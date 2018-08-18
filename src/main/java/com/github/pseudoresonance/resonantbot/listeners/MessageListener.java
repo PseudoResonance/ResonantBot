@@ -43,6 +43,7 @@ public class MessageListener extends ListenerAdapter {
 					c.onCommand(e, parts[0], args);
 				} catch (Exception ex) {
 					ex.printStackTrace();
+					e.getChannel().sendMessage(Language.getMessage(e, "main.errorOccurred")).queue();
 				}
 			}
 			return;

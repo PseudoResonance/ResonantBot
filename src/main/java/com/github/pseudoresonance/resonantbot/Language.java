@@ -18,7 +18,7 @@ public class Language {
 	private final static Pattern dateTimeFormatPattern = Pattern.compile("\\{\\$dateTime\\$\\}");
 	private final static Pattern timeFormatPattern = Pattern.compile("\\{\\$time\\$\\}");
 	
-	private final static Pattern escapePattern = Pattern.compile("([*_~`\\\\])");
+	private final static Pattern escapePattern = Pattern.compile("([*_~`$\\\\])");
 	private final static Pattern prefixPattern = Pattern.compile("[^ -\"$-.0-?A-\\[\\]\\^a-~]");
 	
 	public static void updateAllLang() {

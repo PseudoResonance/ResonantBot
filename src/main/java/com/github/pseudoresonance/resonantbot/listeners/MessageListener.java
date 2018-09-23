@@ -1,5 +1,6 @@
 package com.github.pseudoresonance.resonantbot.listeners;
 
+import java.io.File;
 import java.util.HashMap;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -9,6 +10,7 @@ import com.github.pseudoresonance.resonantbot.Config;
 import com.github.pseudoresonance.resonantbot.Language;
 import com.github.pseudoresonance.resonantbot.ResonantBot;
 import com.github.pseudoresonance.resonantbot.api.Command;
+import com.github.pseudoresonance.resonantbot.log.MessageErrorLogger;
 
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.events.message.GenericMessageEvent;
@@ -18,6 +20,7 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 public class MessageListener extends ListenerAdapter {
 	
 	private static HashMap<Long, String> prefixes = new HashMap<Long, String>();
+	private static final MessageErrorLogger logger = new MessageErrorLogger(new File(ResonantBot.getDir(), "errors"));
 
 	@Override
 	public void onMessageReceived(MessageReceivedEvent e) {
@@ -43,7 +46,13 @@ public class MessageListener extends ListenerAdapter {
 					}
 					c.onCommand(e, parts[0], args);
 				} catch (Exception ex) {
-					ResonantBot.getLogger().error("Error on Message \"" + e.getMessage().getContentRaw() + "\" (" + e.getMessageId() + ") from " + e.getAuthor().getId() + "\n", ex);
+					String error = "Error on Message: \"" + e.getMessage().getContentRaw() + "\" (" + e.getMessageId() + ") from: " + e.getAuthor().getName() + " (" + e.getAuthor().getId() + ") in ";
+					if (e.getChannelType() == ChannelType.PRIVATE)
+						error += "Direct Messages";
+					else
+						error += "Guild: " + e.getGuild().getName() + " (" + e.getGuild().getId() + ")";
+					ResonantBot.getLogger().error(error, ex);
+					logger.logError(error, ex);
 					e.getChannel().sendMessage(Language.getMessage(e, "main.errorOccurred")).queue();
 				}
 			}

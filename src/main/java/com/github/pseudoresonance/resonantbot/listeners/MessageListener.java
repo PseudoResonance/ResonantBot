@@ -7,6 +7,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import com.github.pseudoresonance.resonantbot.CommandManager;
 import com.github.pseudoresonance.resonantbot.Config;
 import com.github.pseudoresonance.resonantbot.Language;
+import com.github.pseudoresonance.resonantbot.ResonantBot;
 import com.github.pseudoresonance.resonantbot.api.Command;
 
 import net.dv8tion.jda.core.entities.ChannelType;
@@ -42,7 +43,7 @@ public class MessageListener extends ListenerAdapter {
 					}
 					c.onCommand(e, parts[0], args);
 				} catch (Exception ex) {
-					ex.printStackTrace();
+					ResonantBot.getLogger().error("Error on Message \"" + e.getMessage().getContentRaw() + "\" (" + e.getMessageId() + ") from " + e.getAuthor().getId() + "\n", ex);
 					e.getChannel().sendMessage(Language.getMessage(e, "main.errorOccurred")).queue();
 				}
 			}

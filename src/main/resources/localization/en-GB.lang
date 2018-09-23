@@ -1,9 +1,9 @@
 #en-GB lang file
 
-dateFormat: "MM/d/uuuu"
-dateFormatExplanation: "mm/dd/yyyy"
-dateTimeFormat: "MM/d/uuuu H:mm:ss"
-dateTimeFormatExplanation: "mm/dd/yyyy H:mm:ss"
+dateFormat: "d/MM/uuuu"
+dateFormatExplanation: "dd/mm/yyyy"
+dateTimeFormat: "d/MM/uuuu H:mm:ss"
+dateTimeFormatExplanation: "dd/mm/yyyy H:mm:ss"
 timeFormat: "H:mm:ss"
 timeFormatExplanation: "H:mm:ss"
 
@@ -35,3 +35,4 @@ main:
   requestedBy: "Requested By {$1$}"
   errorOccurred: "An error has occurred! Please contact the bot owner!"
   validSubcommands: "Valid subcommands: {$1$}"
+  rateLimit: "Rate limit reached! Please wait!"

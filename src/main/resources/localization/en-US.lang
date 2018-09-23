@@ -35,3 +35,4 @@ main:
   requestedBy: "Requested By {$1$}"
   errorOccurred: "An error has occurred! Please contact the bot owner!"
   validSubcommands: "Valid subcommands: {$1$}"
+  rateLimit: "Rate limit reached! Please wait!"

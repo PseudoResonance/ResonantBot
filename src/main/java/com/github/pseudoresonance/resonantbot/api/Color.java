@@ -1,4 +1,4 @@
-package com.github.pseudoresonance.resonantbot;
+package com.github.pseudoresonance.resonantbot.api;
 
 public enum Color {
 

@@ -1,50 +1,130 @@
 package com.github.pseudoresonance.resonantbot;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.regex.Pattern;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonException;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonReader;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-import javax.json.JsonWriter;
+import org.simpleyaml.configuration.ConfigurationSection;
+import org.simpleyaml.configuration.file.YamlFile;
+import org.simpleyaml.exceptions.InvalidConfigurationException;
+import org.slf4j.Logger;
 
-import com.github.pseudoresonance.resonantbot.listeners.MessageListener;
-
+import com.github.pseudoresonance.resonantbot.data.Backend;
+import com.github.pseudoresonance.resonantbot.data.Data;
+import com.github.pseudoresonance.resonantbot.data.FileBackend;
+import com.github.pseudoresonance.resonantbot.data.MySQLBackend;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Game;
 
 public class Config {
+	
+	private static Logger log = null;
+	
+	private static YamlFile yaml = null;
 
 	private static String token = "";
-	private static String prefix = "|";
 	private static String name = "ResonantBot";
+	private static String prefix = "|";
 	private static long owner = 0;
 	private static String lang = "en-US";
-	private static String status = "%servers% Servers | %prefix%help";
 	private static Game.GameType statusType = Game.GameType.LISTENING;
-
-	private static HashMap<String, Object> map;
+	private static String status = "%servers% Servers | %prefix%help";
+	
+	private static String backend = "file";
+	private static HashMap<String, Backend> backends = new HashMap<String, Backend>();
+	
+	public static void loadConfig() {
+		log.debug("Loading config");
+		File f = ResonantBot.copyFileFromJar("config.yml");
+		try {
+			yaml = new YamlFile(f);
+			try {
+				yaml.load();
+			} catch (InvalidConfigurationException | IOException e) {
+				log.error("Could not load config file! Shutting down!", e);
+			}
+			token = yaml.getString("Bot.Token");
+			if (token == null) token = "";
+			name = yaml.getString("Bot.Name");
+			if (name == null) name = "ResonantBot";
+			prefix = yaml.getString("Bot.Prefix");
+			if (prefix == null) prefix = "|";
+			String ownerTemp = yaml.getString("Bot.Owner");
+			owner = (ownerTemp == null) ? 0L : Long.valueOf(ownerTemp);
+			lang = yaml.getString("Bot.Lang");
+			if (lang == null) lang = "en-US";
+			String statusTypeTemp = yaml.getString("Bot.StatusType");
+			if (statusTypeTemp == null) statusTypeTemp = "LISTENING";
+			String statusTypeString = statusTypeTemp.toUpperCase().trim();
+			if (statusTypeString.equals("PLAYING"))
+				statusTypeString = "DEFAULT";
+			statusType = Game.GameType.valueOf(statusTypeString);
+			status = yaml.getString("Bot.Status");
+			if (status == null) status = "%servers% Servers | %prefix%help";
+			
+			backend = yaml.getString("Data.Backend");
+			if (backend == null) backend = "";
+			ConfigurationSection cs = yaml.getConfigurationSection("Data.Backends");
+			HashMap<String, Backend> backends = new HashMap<String, Backend>();
+			for (String key : cs.getKeys(false)) {
+				log.debug("Reading backend: " + key + " from config");
+				ConfigurationSection be = cs.getConfigurationSection(key);
+				String type = be.getString("type");
+				switch (type) {
+				case "mysql":
+					String host = be.getString("host");
+					int port = be.getInt("port");
+					String username = be.getString("username");
+					String password = be.getString("password");
+					String database = be.getString("database");
+					String prefix = be.getString("prefix");
+					boolean ssl = be.getBoolean("useSSL");
+					if (host != null && host.equals("")) {
+						log.error("Host for backend: " + key + " is missing!");
+						break;
+					} else if (database != null && database.equals("")) {
+						log.error("Database for backend: " + key + " is missing!");
+						break;
+					} else if (port == 0) {
+						log.error("Port for backend: " + key + " is missing!");
+						break;
+					}
+					MySQLBackend mb = new MySQLBackend(key, host, port, username, password, database, prefix, ssl);
+					backends.put(key, mb);
+					break;
+				case "file":
+				default:
+					String dir = be.getString("directory");
+					if (dir != null) {
+						File file = new File(ResonantBot.getDir(), dir);
+						FileBackend fb = new FileBackend(key, file);
+						backends.put(key, fb);
+					} else {
+						log.error("Directory for backend: " + key + " is missing!");
+					}
+				}
+			}
+			if (backends.size() > 0) {
+				Config.backends = backends;
+				if (!backends.containsKey(backend)) {
+					log.error("Selected backend: " + backend + " does not exist in config!");
+					System.exit(1);
+				}
+			} else {
+				log.error("No valid backends configured in config!");
+				System.exit(1);
+			}
+		} catch (IllegalArgumentException e) {
+			log.error("Could not load default config! Please download a new copy of this bot!", e);
+			System.exit(1);
+		}
+	}
 
 	public static boolean isTokenSet() {
+		if (yaml == null)
+			loadConfig();
 		if (token.equals("") || token == null) {
 			return false;
 		} else {
@@ -52,36 +132,46 @@ public class Config {
 		}
 	}
 
-	protected static void setToken(String token) {
-		Config.token = token;
-		map.put("token", token);
-	}
-
 	protected static String getToken() {
+		if (yaml == null)
+			loadConfig();
 		return token;
 	}
 
 	protected static void setPrefix(String prefix) {
+		if (yaml == null)
+			loadConfig();
 		Config.prefix = prefix;
-		map.put("prefix", prefix);
+		yaml.set("Bot.Prefix", prefix);
+		saveConfig();
 	}
 
 	public static String getPrefix() {
+		if (yaml == null)
+			loadConfig();
 		return prefix;
 	}
 
 	protected static void setName(String name) {
+		if (yaml == null)
+			loadConfig();
 		Config.name = name;
-		map.put("name", name);
+		yaml.set("Bot.Name", name);
+		saveConfig();
 	}
 
 	public static String getName() {
+		if (yaml == null)
+			loadConfig();
 		return name;
 	}
 
 	public static void setOwner(long owner) {
+		if (yaml == null)
+			loadConfig();
 		Config.owner = owner;
-		map.put("owner", owner);
+		yaml.set("Bot.Owner", owner);
+		saveConfig();
 	}
 
 	public static void setOwner(String owner) {
@@ -89,45 +179,63 @@ public class Config {
 	}
 
 	public static long getOwner() {
+		if (yaml == null)
+			loadConfig();
 		return owner;
 	}
 
 	public static void setLang(String lang) {
+		if (yaml == null)
+			loadConfig();
 		Config.lang = lang;
-		map.put("lang", lang);
+		yaml.set("Bot.Lang", lang);
+		saveConfig();
 	}
 
 	public static String getLang() {
+		if (yaml == null)
+			loadConfig();
 		return lang;
 	}
 
 	public static void setStatus(String status) {
+		if (yaml == null)
+			loadConfig();
 		Config.status = status;
-		map.put("status", status);
+		yaml.set("Bot.Status", status);
+		saveConfig();
 	}
 
 	public static void setStatusType(Game.GameType statusType) {
+		if (yaml == null)
+			loadConfig();
 		Config.statusType = statusType;
-		map.put("statusType", statusType.toString());
+		yaml.set("Bot.StatusType", statusType.toString());
+		saveConfig();
 	}
 
 	public static void setStatus(Game.GameType statusType, String status) {
+		if (yaml == null)
+			loadConfig();
 		Config.status = status;
 		Config.statusType = statusType;
-		map.put("status", status);
-		map.put("statusType", statusType.toString());
+		yaml.set("Bot.Status", status);
+		yaml.set("Bot.StatusType", statusType.toString());
+		saveConfig();
 	}
 
 	public static String getStatus() {
+		if (yaml == null)
+			loadConfig();
 		String status = Config.status;
-		if (ResonantBot.getClient() != null) {
+		if (ResonantBot.getJDA() != null) {
 			status = status.replaceAll(Pattern.quote("%prefix%"), prefix);
 			status = status.replaceAll(Pattern.quote("%servers%"),
-					String.valueOf(ResonantBot.getClient().getGuilds().size()));
+					String.valueOf(ResonantBot.getJDA().getGuilds().size()));
 			status = status.replaceAll(Pattern.quote("%ping%"),
-					String.valueOf(ResonantBot.getClient().getAveragePing()) + "ms");
+					String.valueOf(ResonantBot.getJDA().getAveragePing()) + "ms");
 			status = status.replaceAll(Pattern.quote("%shards%"),
-					String.valueOf(ResonantBot.getClient().getShardsTotal()));
+					String.valueOf(ResonantBot.getJDA().getShardsTotal()));
 		} else {
 			status = prefix + "help";
 		}
@@ -135,12 +243,47 @@ public class Config {
 	}
 
 	public static Game.GameType getStatusType() {
+		if (yaml == null)
+			loadConfig();
 		return statusType;
+	}
+	
+	public static void setBackend(String name) {
+		if (yaml == null)
+			loadConfig();
+		for (String n : backends.keySet()) {
+			if (n.equals(name)) {
+				yaml.set("Data.Backend", name);
+				backend = name;
+			}
+		}
+		saveConfig();
+		Data.updateBackend();
+	}
+	
+	public static Backend getBackend() {
+		if (yaml == null)
+			loadConfig();
+		return backends.get(backend);
+	}
+	
+	public static String getBackendName() {
+		if (yaml == null)
+			loadConfig();
+		return backend;
+	}
+
+	
+	public static HashMap<String, Backend> getBackends() {
+		if (yaml == null)
+			loadConfig();
+		return backends;
 	}
 
 	public static Game getGame() {
+		if (yaml == null)
+			loadConfig();
 		Game game = Game.listening(prefix + "help");
-		;
 		if (statusType != Game.GameType.STREAMING)
 			game = Game.of(statusType, getStatus());
 		else {
@@ -151,296 +294,27 @@ public class Config {
 	}
 
 	public static void updateStatus() {
-		List<JDA> statuses = ResonantBot.getClient().getShards();
+		List<JDA> statuses = ResonantBot.getJDA().getShards();
 		Game game = getGame();
 		for (JDA jda : statuses) {
 			jda.getPresence().setGame(game);
 		}
 	}
 
-	public static boolean saveData() {
-		File dir = new File(ResonantBot.getDir(), "data");
-		dir.mkdir();
-		JsonObjectBuilder prefixesBuild = Json.createObjectBuilder();
-		HashMap<Long, String> prefixes = MessageListener.getPrefixes();
-		for (Long p : prefixes.keySet()) {
-			prefixesBuild.add(String.valueOf(p), prefixes.get(p));
-		}
-		JsonObject prefix = prefixesBuild.build();
-		File pre = new File(dir, "prefixes.json");
+	protected static void init(Logger log) {
+		Config.log = log;
+		log.debug("Initializing config");
+		loadConfig();
+		log.debug("Loading data");
+		Data.init(log);
+	}
+	
+	private synchronized static void saveConfig() {
 		try {
-			FileOutputStream os = new FileOutputStream(pre);
-			JsonWriter json = Json.createWriter(os);
-			json.writeObject(prefix);
-			json.close();
-			os.close();
+			yaml.saveWithComments();
 		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
+			log.error("Could not save config!", e);
 		}
-		JsonObjectBuilder langsBuild = Json.createObjectBuilder();
-		HashMap<Long, String> langs = Language.getGuildLangs();
-		for (Long p : langs.keySet()) {
-			langsBuild.add(String.valueOf(p), langs.get(p));
-		}
-		JsonObject lang = langsBuild.build();
-		File lan = new File(dir, "guildLangs.json");
-		try {
-			FileOutputStream os = new FileOutputStream(lan);
-			JsonWriter json = Json.createWriter(os);
-			json.writeObject(lang);
-			json.close();
-			os.close();
-			return true;
-		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
-		}
-	}
-
-	protected static void init() {
-		File conf = new File(ResonantBot.getDir() + File.separator + "data", "config.json");
-		if (conf.exists()) {
-			try {
-				FileInputStream fs = new FileInputStream(conf);
-				JsonReader json = Json.createReader(fs);
-				JsonObject config = json.readObject();
-				json.close();
-				fs.close();
-				fs.close();
-				try {
-					token = config.getString("token");
-				} catch (NullPointerException e) {
-				}
-				try {
-					prefix = config.getString("prefix");
-				} catch (NullPointerException e) {
-				}
-				try {
-					name = config.getString("name");
-				} catch (NullPointerException e) {
-				}
-				try {
-					owner = config.getJsonNumber("owner").longValueExact();
-				} catch (NullPointerException e) {
-				}
-				try {
-					lang = config.getString("lang");
-				} catch (NullPointerException e) {
-				}
-				try {
-					status = config.getString("status");
-				} catch (NullPointerException e) {
-				}
-				try {
-					statusType = Game.GameType.valueOf(config.getString("statusType").toUpperCase());
-				} catch (NullPointerException e) {
-				}
-				conf = null;
-				Config.map = toMap(config);
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (JsonException e) {
-				return;
-			}
-		}
-		File pre = new File(ResonantBot.getDir() + File.separator + "data", "prefixes.json");
-		if (pre.exists()) {
-			try {
-				FileInputStream fs = new FileInputStream(pre);
-				JsonReader json = Json.createReader(fs);
-				JsonObject prefix = json.readObject();
-				json.close();
-				fs.close();
-				fs.close();
-				HashMap<Long, String> prefixes = new HashMap<Long, String>();
-				for (String k : prefix.keySet()) {
-					try {
-						prefixes.put(Long.valueOf(k), prefix.getString(k));
-					} catch (NumberFormatException e) {}
-				}
-				prefix = null;
-				pre = null;
-				MessageListener.setPrefixes(prefixes);
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (JsonException e) {
-				return;
-			}
-		}
-		File lan = new File(ResonantBot.getDir() + File.separator + "data", "guildLangs.json");
-		if (lan.exists()) {
-			try {
-				FileInputStream fs = new FileInputStream(lan);
-				JsonReader json = Json.createReader(fs);
-				JsonObject lang = json.readObject();
-				json.close();
-				fs.close();
-				fs.close();
-				HashMap<Long, String> langs = new HashMap<Long, String>();
-				for (String k : lang.keySet()) {
-					try {
-						langs.put(Long.valueOf(k), lang.getString(k));
-					} catch (NumberFormatException e) {}
-				}
-				lang = null;
-				lan = null;
-				Language.setGuildLangs(langs);
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (JsonException e) {
-				return;
-			}
-		}
-	}
-
-	public static void save() {
-		JsonObjectBuilder builder = Json.createObjectBuilder();
-		for (Entry<String, Object> entry : map.entrySet()) {
-			Object value = entry.getValue();
-			if (value instanceof BigDecimal) {
-				builder.add(entry.getKey(), (BigDecimal) value);
-			} else if (value instanceof BigInteger) {
-				builder.add(entry.getKey(), (BigInteger) value);
-			} else if (value instanceof Boolean) {
-				builder.add(entry.getKey(), (Boolean) value);
-			} else if (value instanceof Double) {
-				builder.add(entry.getKey(), (Double) value);
-			} else if (value instanceof Integer) {
-				builder.add(entry.getKey(), (Integer) value);
-			} else if (value instanceof JsonArrayBuilder) {
-				builder.add(entry.getKey(), (JsonArrayBuilder) value);
-			} else if (value instanceof JsonObjectBuilder) {
-				builder.add(entry.getKey(), (JsonObjectBuilder) value);
-			} else if (value instanceof JsonValue) {
-				builder.add(entry.getKey(), (JsonValue) value);
-			} else if (value instanceof Long) {
-				builder.add(entry.getKey(), (Long) value);
-			} else if (value instanceof String) {
-				builder.add(entry.getKey(), (String) value);
-			}
-		}
-		File dir = new File(ResonantBot.getDir(), "data");
-		dir.mkdir();
-		File conf = new File(dir, "config.json");
-		try {
-			FileOutputStream os = new FileOutputStream(conf);
-			JsonWriter json = Json.createWriter(os);
-			json.writeObject(builder.build());
-			json.close();
-			os.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public static HashMap<String, Object> jsonToMap(JsonObject json) {
-		HashMap<String, Object> retMap = new HashMap<String, Object>();
-
-		if (json != JsonObject.NULL) {
-			retMap = toMap(json);
-		}
-		return retMap;
-	}
-
-	public static HashMap<String, Object> toMap(JsonObject object) throws JsonException {
-		HashMap<String, Object> map = new HashMap<String, Object>();
-
-		Iterator<String> keysItr = object.keySet().iterator();
-		while (keysItr.hasNext()) {
-			String key = keysItr.next();
-			Object value = object.get(key);
-
-			if (value instanceof JsonArray) {
-				value = toList((JsonArray) value);
-			}
-
-			else if (value instanceof JsonObject) {
-				value = toMap((JsonObject) value);
-			}
-
-			else if (value instanceof JsonString) {
-				value = ((JsonString) value).getString();
-			}
-			map.put(key, value);
-		}
-		return map;
-	}
-
-	public static ArrayList<Object> toList(JsonArray array) {
-		ArrayList<Object> list = new ArrayList<Object>();
-		for (int i = 0; i < array.size(); i++) {
-			Object value = array.get(i);
-			if (value instanceof JsonArray) {
-				value = toList((JsonArray) value);
-			}
-
-			else if (value instanceof JsonObject) {
-				value = toMap((JsonObject) value);
-			}
-			list.add(value);
-		}
-		return list;
-	}
-
-	public static boolean containsKey(Object key) {
-		return map.containsKey(key);
-	}
-
-	public static boolean containsValue(Object value) {
-		return map.containsValue(value);
-	}
-
-	public static Set<Entry<String, Object>> entrySet() {
-		return map.entrySet();
-	}
-
-	public static Object get(Object key) {
-		return map.get(key);
-	}
-
-	public static Object getOrDefault(Object key, Object defaultValue) {
-		return map.getOrDefault(key, defaultValue);
-	}
-
-	public static Set<String> keySet() {
-		return map.keySet();
-	}
-
-	public static Object put(String key, Object value) {
-		return map.put(key, value);
-	}
-
-	public static void putAll(Map<? extends String, ? extends Object> m) {
-		map.putAll(m);
-	}
-
-	public static Object putIfAbsent(String key, Object value) {
-		return map.putIfAbsent(key, value);
-	}
-
-	public static boolean remove(Object key, Object value) {
-		return map.remove(key, value);
-	}
-
-	public static Object remove(Object key) {
-		return map.remove(key);
-	}
-
-	public static boolean replace(String key, Object oldValue, Object newValue) {
-		return map.replace(key, oldValue, newValue);
-	}
-
-	public static Object replace(String key, Object value) {
-		return map.replace(key, value);
-	}
-
-	public static int size() {
-		return map.size();
-	}
-
-	public static Collection<Object> values() {
-		return map.values();
 	}
 
 }

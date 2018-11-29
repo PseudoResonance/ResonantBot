@@ -6,13 +6,14 @@ import java.util.regex.Pattern;
 
 import org.simpleyaml.configuration.file.YamlConfiguration;
 
+import com.github.pseudoresonance.resonantbot.data.Data;
+
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
 public class Language {
 	
 	private static HashMap<String, YamlConfiguration> yamls = new HashMap<String, YamlConfiguration>();
-	private static HashMap<Long, String> guildLangs = new HashMap<Long, String>();
 	
 	private final static Pattern dateFormatPattern = Pattern.compile("\\{\\$date\\$\\}");
 	private final static Pattern dateTimeFormatPattern = Pattern.compile("\\{\\$dateTime\\$\\}");
@@ -23,7 +24,7 @@ public class Language {
 	
 	public static void updateAllLang() {
 		yamls.clear();
-		for (String name : guildLangs.values()) {
+		for (String name : Data.getGuildLanguages().values()) {
 			if (!yamls.containsKey(name)) {
 				updateGuildLang(name);
 			}
@@ -37,21 +38,18 @@ public class Language {
 	}
 	
 	public static void setGuildLang(Long guildId, String name) {
-		guildLangs.put(guildId, name);
+		Data.setGuildLanguage(guildId, name);
 		if (!yamls.containsKey(name)) {
 			updateGuildLang(name);
 		}
 	}
 	
 	public static void unsetGuildLang(Long guildId) {
-		guildLangs.remove(guildId);
+		Data.setGuildLanguage(guildId, Config.getLang());
 	}
 	
 	public static String getGuildLang(Long guildId) {
-		String lang = guildLangs.get(guildId);
-		if (lang == null)
-			lang = Config.getLang();
-		return lang;
+		return Data.getGuildLanguage(guildId);
 	}
 	
 	protected static void setLang(YamlConfiguration yaml) {
@@ -93,14 +91,14 @@ public class Language {
 		} else {
 			id = e.getGuild().getIdLong();
 		}
-		String lang = guildLangs.get(id);
+		String lang = Data.getGuildLanguage(id);
 		if (lang == null)
 			lang = Config.getLang();
 		return getMessage(lang, key, args);
 	}
 	
 	public static String getMessage(Long id, String key, Object... args) {
-		String lang = guildLangs.get(id);
+		String lang = Data.getGuildLanguage(id);
 		if (lang == null)
 			lang = Config.getLang();
 		return getMessage(lang, key, args);
@@ -136,8 +134,8 @@ public class Language {
 		return getDateFormat(Config.getLang());
 	}
 	
-	public static String getDateFormat(Long guildID) {
-		String lang = guildLangs.get(guildID);
+	public static String getDateFormat(Long guildId) {
+		String lang = Data.getGuildLanguage(guildId);
 		return getDateFormat(lang);
 	}
 	
@@ -155,8 +153,8 @@ public class Language {
 		return getDateTimeFormat(Config.getLang());
 	}
 	
-	public static String getDateTimeFormat(Long guildID) {
-		String lang = guildLangs.get(guildID);
+	public static String getDateTimeFormat(Long guildId) {
+		String lang = Data.getGuildLanguage(guildId);
 		return getDateTimeFormat(lang);
 	}
 	
@@ -174,8 +172,8 @@ public class Language {
 		return getTimeFormat(Config.getLang());
 	}
 	
-	public static String getTimeFormat(Long guildID) {
-		String lang = guildLangs.get(guildID);
+	public static String getTimeFormat(Long guildId) {
+		String lang = Data.getGuildLanguage(guildId);
 		return getTimeFormat(lang);
 	}
 	
@@ -187,19 +185,6 @@ public class Language {
 			}
 		}
 		return "";
-	}
-	
-	public static HashMap<Long, String> getGuildLangs() {
-		return guildLangs;
-	}
-	
-	protected static void setGuildLangs(HashMap<Long, String> langs) {
-		guildLangs = langs;
-		for (String l : guildLangs.values()) {
-			if (!yamls.containsKey(l)) {
-				updateGuildLang(l);
-			}
-		}
 	}
 	
 	public static String escape(Object toEscape) {

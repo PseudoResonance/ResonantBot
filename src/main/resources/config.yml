@@ -1,0 +1,57 @@
+######################
+# ResonantBot Config #
+######################
+
+##################
+# Discord Config #
+##################
+Bot:
+
+  # Discord Bot Token
+  Token: ""
+
+  # Bot name
+  Name: "ResonantBot"
+
+  # Default bot prefix
+  Prefix: "|"
+
+  # Bot owner Discord User ID
+  Owner: ""
+
+  # Default bot language
+  Lang: "en-US"
+
+  # Bot status type (ex: PLAYING, LISTENING, WATCHING, STREAMING)
+  StatusType: "LISTENING"
+
+  # Bot status message
+  Status: "%servers% Servers | %prefix%help"
+
+
+################
+# Data Storage #
+################
+Data:
+
+  # Data backend configuration
+  Backend: file
+
+  # Define backends here:
+  # Config key is the backend name
+  # type = backend type (file or mysql)
+  Backends:
+    file:
+      type: file
+      # Relative to plugin directory if not absolute
+      directory: Data
+    mysql:
+      type: mysql
+      host: 127.0.0.1
+      port: 3306
+      username: username
+      password: password
+      database: ResonantBot
+      # Prefix for all table names to prevent conflict if sharing a database
+      prefix: ""
+      useSSL: true

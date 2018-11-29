@@ -36,3 +36,4 @@ main:
   errorOccurred: "エラーが発生しました！ボットの所有者に連絡して下さい！"
   validSubcommands: "有効なサブコマンド：　{$1$}"
   rateLimit: "レート制限に達した！お待ちください！"
+  none: "なし"

@@ -2,9 +2,9 @@ package com.github.pseudoresonance.resonantbot.listeners;
 
 import org.slf4j.Logger;
 
-import com.github.pseudoresonance.resonantbot.Color;
 import com.github.pseudoresonance.resonantbot.Config;
 import com.github.pseudoresonance.resonantbot.ResonantBot;
+import com.github.pseudoresonance.resonantbot.api.Color;
 
 import net.dv8tion.jda.core.events.ReadyEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;

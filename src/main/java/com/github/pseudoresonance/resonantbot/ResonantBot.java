@@ -1,27 +1,22 @@
 package com.github.pseudoresonance.resonantbot;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Scanner;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-
 import javax.security.auth.login.LoginException;
 
 import org.simpleyaml.configuration.file.YamlConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.github.pseudoresonance.resonantbot.api.Plugin;
+import com.github.pseudoresonance.resonantbot.data.Data;
 import com.github.pseudoresonance.resonantbot.listeners.ConnectionListener;
 import com.github.pseudoresonance.resonantbot.listeners.GuildListener;
 import com.github.pseudoresonance.resonantbot.listeners.MessageListener;
@@ -32,77 +27,81 @@ import net.dv8tion.jda.bot.sharding.ShardManager;
 
 public class ResonantBot {
 
-	private static Logger log = LoggerFactory.getLogger(ResonantBot.class.getName());
+	private static Logger log;
 
 	private static HashMap<String, String> args;
-	private static String directory;
+	private static File directory;
+	private static File langDirectory;
+	
 	private static ShardManager client;
 	
-	private static File langDir;
-
-	private static Timer saveTimer;
-
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) {
 		ResonantBot.args = Startup.parseArgs(args);
-		directory = Startup.init();
-		langDir = new File(directory + File.separator + "localization");
-		langDir.mkdir();
-		boolean fromJar = false;
-		if (ResonantBot.class.getResource("ResonantBot.class").toString().startsWith("jar")) {
-			try {
-				File jf = new File(ResonantBot.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-				try (JarFile jar = new JarFile(jf)) {
-					Enumeration<? extends ZipEntry> entries = jar.entries();
-					while (entries.hasMoreElements()) {
-						fromJar = true;
-						ZipEntry entry = entries.nextElement();
-						if (entry.getName().startsWith("localization/") && entry.getName().endsWith(".lang")) {
-							try (InputStream is = jar.getInputStream(entry)) {
-								if (is != null) {
-									String name = entry.getName().substring(13, entry.getName().length());
-									File dest = new File(langDir, name);
-									if (!dest.exists()) {
-										Files.copy(is, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
-									}
-								}
-							} catch (IOException | NullPointerException e) {}
-						}
-					}
-				} catch (IOException e) {}
-			} catch (URISyntaxException e1) {}
-		}
-		if (!fromJar) {
-			File dir = new File(directory + "/src/main/resources/localization/");
-			if (dir.exists()) {
-				for (File f : dir.listFiles()) {
-					if (f.isFile() && f.getName().endsWith(".lang")) {
-						File dest = new File(langDir, f.getName());
-						try {
-							Files.copy(f.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
-						} catch (IOException e) {}
-					}
-				}
-			}
-		}
+		directory = Startup.init(ResonantBot.args);
+		log = LoggerFactory.getLogger("ResonantBot");
+		log.info("Using directory: " + directory);
+		Startup.setLogger(log);
+		langDirectory = new File(directory, "localization");
+		langDirectory.mkdir();
+		Startup.defaultLangs(langDirectory);
 		boolean found = false;
-		for (File f : langDir.listFiles()) {
+		for (File f : langDirectory.listFiles()) {
 			if (f.isFile() && f.getName().endsWith(".lang")) {
 				found = true;
 			}
 		}
 		if (!found) {
-			log.error("Could not find default en-US language files! Please download a fresh copy of this bot! Shutting down!");
+			log.error("Could not find default language files! Please download a fresh copy of this bot! Shutting down!");
 			System.exit(1);
 		}
+		initHooks();
+		log.debug("Completed initialization");
+		log.info("Starting up ResonantBot");
+		copyFileFromJar("config.yml");
+		Config.init(log);
+		log.debug("Updating languages");
+		Language.updateAllLang();
+		new File(directory, "plugins").mkdir();
+		log.debug("Launching bot");
+		String token = Config.getToken();
+		if (ResonantBot.args.containsKey("token"))
+			token = ResonantBot.args.get("token");
+		if (token == null || token.equals("")) {
+			log.error("Please set a bot token in the config!");
+			System.exit(1);
+		}
+		try {
+			client = new DefaultShardManagerBuilder().setMaxReconnectDelay(32).setToken(Config.getToken()).setGame(Config.getGame()).build();
+		} catch (LoginException e) {
+			e.printStackTrace();
+		}
+		log.debug("Registering events");
+		client.addEventListener(new MessageListener(), new ReadyListener(), new ConnectionListener(), new GuildListener());
+		log.debug("Loading plugins");
+		PluginManager.reload();
+	}
+
+	public static File getDir() {
+		return directory;
+	}
+
+	public static File getLangDir() {
+		return langDirectory;
+	}
+
+	public static ShardManager getJDA() {
+		return client;
+	}
+
+	public static Logger getLogger() {
+		return log;
+	}
+	
+	private static void initHooks() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				saveTimer.cancel();
 				log.info("Shutting down!");
-				Config.saveData();
-				log.info("Data saved!");
-				Config.save();
-				log.info("Configuration saved!");
 				ArrayList<String> names = new ArrayList<String>();
 				for (Plugin p : PluginManager.getPlugins()) {
 					names.add(p.getName());
@@ -110,6 +109,7 @@ public class ResonantBot {
 				for (String n : names) {
 					PluginManager.unload(n);
 				}
+				Data.shutdown();
 				log.info("Plugins unloaded!");
 			}
 		});
@@ -122,159 +122,61 @@ public class ResonantBot {
 				}
 			}
 		});
-		if (directory == "") {
-			System.exit(0);
+	}
+	
+	public static File copyFileFromJar(String path) {
+		return copyFileFromJar(path, false);
+	}
+	
+	public static File copyFileFromJar(String path, File dest) {
+		return copyFileFromJar(path, dest, false);
+	}
+	
+	public static File copyFileFromJar(String path, boolean override) {
+		return copyFileFromJar(path, new File(directory, path), override);
+	}
+	
+	public static File copyFileFromJar(String path, File dest, boolean override) {
+		if ((Startup.checkedJar && Startup.jarFile) || ResonantBot.class.getResource("ResonantBot.class").toString().startsWith("jar")) {
+			try {
+				File jf = new File(ResonantBot.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+				try (JarFile jar = new JarFile(jf)) {
+					try (InputStream is = jar.getInputStream(jar.getEntry(path))) {
+						if (is != null) {
+							String name = dest.getName();
+							if (!dest.exists() || override) {
+								Files.copy(is, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+								log.debug("Copying " + name + " to " + dest.getAbsolutePath());
+								return dest;
+							} else
+								return dest;
+						}
+					} catch (IOException | NullPointerException e) {}
+				} catch (IOException e) {}
+			} catch (URISyntaxException e1) {}
 		}
-		log.info("Using directory: " + directory);
-		log.info("Starting up ResonantBot");
-		Config.init();
-		if (!Config.isTokenSet()) {
-			Scanner scanner = new Scanner(System.in);
-			log.debug("No token found. Prompting for token.");
-			String token = "";
-			while (true) {
-				System.out.println(Color.BRIGHT_WHITE + "No token is set for the bot! Please input a token:");
-				token = scanner.nextLine();
-				if (token.length() > 0) {
-					break;
-				}
+		if (!Startup.jarFile) {
+			Startup.checkedJar = true;
+			String str = ResonantBot.class.getProtectionDomain().getCodeSource().getLocation().toString();
+			File dirTemp = new File(str.substring(6, str.length())).getParentFile().getParentFile();
+			File dir = new File(dirTemp, "/src/main/resources/");
+			if (dir.exists()) {
+				File f = new File(dir, path);
+				if (!dest.exists() || override) {
+					try {
+						Files.copy(f.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+						log.debug("Copying " + f.getName() + " to " + dest.getAbsolutePath());
+						return dest;
+					} catch (IOException e) {}
+				} else
+					return dest;
 			}
-			log.debug("Token received.");
-			log.debug("Prompting for prefix.");
-			System.out.println(
-					Color.BRIGHT_WHITE + "\nPlease input the default prefix: (or leave blank for default: '|')");
-			String prefix = scanner.nextLine();
-			log.debug("Prefix received.");
-			if (prefix.length() == 0) {
-				prefix = "|";
-				log.debug("Prefix blank. Using default: '|'");
-			}
-			log.debug("Prompting for owner.");
-			String owner = "";
-			while (true) {
-				System.out.println(Color.BRIGHT_WHITE + "\nPlease input the id of the bot owner:");
-				owner = scanner.nextLine();
-				if (owner.length() > 0) {
-					break;
-				}
-			}
-			log.debug("Owner received.");
-			log.debug("Prompting for name.");
-			System.out
-					.println(Color.BRIGHT_WHITE + "\nPlease name the bot: (or leave blank for default: 'ResonantBot')");
-			String name = scanner.nextLine();
-			log.debug("Name received.");
-			if (name.length() == 0) {
-				name = "ResonantBot";
-				log.debug("Name blank. Using default: 'ResonantBot'");
-			}
-			log.debug("Prompting for language.");
-			System.out
-					.println(Color.BRIGHT_WHITE + "\nPlease choose a language: (or leave blank for default: 'en-US')");
-			String lang = scanner.nextLine();
-			log.debug("Language received.");
-			if (lang.length() == 0) {
-				lang = "en-US";
-				log.debug("Language blank. Using default: 'en-US'");
-			}
-			scanner.close();
-			Config.setToken(token);
-			Config.setPrefix(prefix);
-			Config.setOwner(owner);
-			Config.setLang(lang);
-			Config.save();
 		}
-		Language.updateAllLang();
-		new File(directory, "plugins").mkdir();
-		try {
-			client = new DefaultShardManagerBuilder().setMaxReconnectDelay(32).setToken(Config.getToken()).setGame(Config.getGame()).build();
-		} catch (LoginException e) {
-			e.printStackTrace();
-		}
-		client.addEventListener(new MessageListener(), new ReadyListener(), new ConnectionListener(), new GuildListener());
-		PluginManager.reload();
-		saveTimer = new Timer();
-		saveTimer.scheduleAtFixedRate(new TimerTask() {
-			public void run() {
-				Config.saveData();
-			}
-		}, 300000, 300000);
-	}
-
-	public static String getArg(String arg) {
-		if (args.containsKey(arg)) {
-			return args.get(arg);
-		} else {
-			return null;
-		}
-	}
-
-	public static String getDir() {
-		return directory;
-	}
-
-	public static File getLangDir() {
-		return langDir;
-	}
-
-	public static ShardManager getClient() {
-		return client;
-	}
-
-	public static Logger getLogger() {
-		return log;
+		return null;
 	}
 	
 	public static YamlConfiguration getLanguage(String name, boolean overwrite) {
-		File lang = new File(langDir, name + ".lang");
-		if (!lang.isFile() || overwrite) {
-			if (ResonantBot.class.getResource("ResonantBot.class").toString().startsWith("file")) {
-				File srcDir = new File(directory + "/src/main/resources/localization");
-				File newLang = new File(srcDir, name + ".lang");
-				try {
-					Files.copy(new FileInputStream(newLang), lang.toPath(), StandardCopyOption.REPLACE_EXISTING);
-				} catch (IOException e) {}
-			} else {
-				try (InputStream is = ResonantBot.class.getClassLoader().getResourceAsStream("localization/" + name + ".lang")) {
-					if (is != null) {
-						Files.copy(is, lang.toPath(), StandardCopyOption.REPLACE_EXISTING);
-					}
-				} catch (IOException e) {}
-			}
-		}
-		if (!lang.exists()) {
-			if (!name.equals("en-US")) {
-				File en = new File(langDir, "en-US.lang");
-				if (en.isFile() && !overwrite)
-					lang = en;
-				else {
-					try (InputStream is = ResonantBot.class.getClassLoader().getResourceAsStream("localization/en-US.lang")) {
-						if (is != null) {
-							Files.copy(is, en.toPath(), StandardCopyOption.REPLACE_EXISTING);
-							lang = en;
-						}
-					} catch (IOException e) {
-						if (ResonantBot.class.getResource("ResonantBot.class").toString().startsWith("file")) {
-							File srcDir = new File(directory + "/src/main/resources/localization");
-							lang = new File(srcDir, "en-US.lang");
-						} else {
-							log.error("Could not find default en-US language files! Please download a fresh copy of this bot! Shutting down!");
-							System.exit(1);
-						}
-					}
-				}
-			} else {
-				if (ResonantBot.class.getResource("ResonantBot.class").toString().startsWith("file")) {
-					File srcDir = new File(directory + "/src/main/resources/localization");
-					lang = new File(srcDir, "en-US.lang");
-				} else {
-					log.error("Could not find default en-US language files! Please download a fresh copy of this bot! Shutting down!");
-					System.exit(1);
-				}
-			}
-		}
-		YamlConfiguration yaml = YamlConfiguration.loadConfiguration(lang);
-		return yaml;
+		return YamlConfiguration.loadConfiguration(copyFileFromJar("localization/" + name + ".lang", overwrite));
 	}
 	
 	public static YamlConfiguration getLanguage(String name) {

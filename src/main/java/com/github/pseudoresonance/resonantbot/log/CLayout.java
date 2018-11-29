@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import com.github.pseudoresonance.resonantbot.Color;
+import com.github.pseudoresonance.resonantbot.api.Color;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.pattern.ThrowableProxyConverter;

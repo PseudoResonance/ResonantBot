@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
 import com.github.pseudoresonance.resonantbot.ResonantBot;
 
 public class MessageErrorLogger {

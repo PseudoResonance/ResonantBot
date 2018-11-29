@@ -1,15 +1,13 @@
 package com.github.pseudoresonance.resonantbot.listeners;
 
 import java.io.File;
-import java.util.HashMap;
-
 import org.apache.commons.lang3.ArrayUtils;
 
 import com.github.pseudoresonance.resonantbot.CommandManager;
-import com.github.pseudoresonance.resonantbot.Config;
 import com.github.pseudoresonance.resonantbot.Language;
 import com.github.pseudoresonance.resonantbot.ResonantBot;
 import com.github.pseudoresonance.resonantbot.api.Command;
+import com.github.pseudoresonance.resonantbot.data.Data;
 import com.github.pseudoresonance.resonantbot.log.MessageErrorLogger;
 
 import net.dv8tion.jda.core.entities.ChannelType;
@@ -19,7 +17,6 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
 public class MessageListener extends ListenerAdapter {
 	
-	private static HashMap<Long, String> prefixes = new HashMap<Long, String>();
 	private static final MessageErrorLogger logger = new MessageErrorLogger(new File(ResonantBot.getDir(), "errors"));
 
 	@Override
@@ -30,9 +27,9 @@ public class MessageListener extends ListenerAdapter {
 		String message = e.getMessage().getContentRaw();
 		String prefix = "";
 		if (e.getChannelType() == ChannelType.PRIVATE) {
-			prefix = getPrefix(e.getPrivateChannel().getIdLong());
+			prefix = Data.getGuildPrefix(e.getPrivateChannel().getIdLong());
 		} else {
-			prefix = getPrefix(e.getGuild().getIdLong());
+			prefix = Data.getGuildPrefix(e.getGuild().getIdLong());
 		}
 		if (message.startsWith(prefix)) {
 			String command = message.substring(prefix.length());
@@ -51,7 +48,7 @@ public class MessageListener extends ListenerAdapter {
 						error += "Direct Messages";
 					else
 						error += "Guild: " + e.getGuild().getName() + " (" + e.getGuild().getId() + ")";
-					ResonantBot.getLogger().error(error, ex);
+					ResonantBot.getLogger().error(error + "\n", ex);
 					logger.logError(error, ex);
 					e.getChannel().sendMessage(Language.getMessage(e, "main.errorOccurred")).queue();
 				}
@@ -60,18 +57,11 @@ public class MessageListener extends ListenerAdapter {
 		}
 		if (message.startsWith("<@" + e.getJDA().getSelfUser().getId() + ">")) {
 			if (e.getChannelType() == ChannelType.PRIVATE) {
-				e.getChannel().sendMessage(Language.getMessage(e.getPrivateChannel().getIdLong(), "main.privatePrefix", getPrefix(e.getPrivateChannel().getIdLong()))).queue();
+				e.getChannel().sendMessage(Language.getMessage(e.getPrivateChannel().getIdLong(), "main.privatePrefix", Data.getGuildPrefix(e.getPrivateChannel().getIdLong()))).queue();
 			} else {
-				e.getChannel().sendMessage(Language.getMessage(e.getGuild().getIdLong(), "main.prefix", e.getGuild().getName(), getPrefix(e.getGuild().getIdLong()))).queue();
+				e.getChannel().sendMessage(Language.getMessage(e.getGuild().getIdLong(), "main.prefix", e.getGuild().getName(), Data.getGuildPrefix(e.getGuild().getIdLong()))).queue();
 			}
 		}
-	}
-	
-	public static String getPrefix(Long guildId) {
-		String prefix = prefixes.get(guildId);
-		if (prefix != null)
-			return prefix;
-		return Config.getPrefix();
 	}
 	
 	public static String getPrefix(GenericMessageEvent e) {
@@ -81,26 +71,7 @@ public class MessageListener extends ListenerAdapter {
 		} else {
 			id = e.getGuild().getIdLong();
 		}
-		String prefix = prefixes.get(id);
-		if (prefix != null)
-			return prefix;
-		return Config.getPrefix();
-	}
-	
-	public static void setPrefix(Long guild, String prefix) {
-		if (prefix.equals(Config.getPrefix()))
-			prefixes.remove(guild);
-		else
-			prefixes.put(guild, prefix);
-		Config.saveData();
-	}
-	
-	public static HashMap<Long, String> getPrefixes() {
-		return prefixes;
-	}
-	
-	public static void setPrefixes(HashMap<Long, String> prefixes) {
-		MessageListener.prefixes = prefixes;
+		return Data.getGuildPrefix(id);
 	}
 
 }

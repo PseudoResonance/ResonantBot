@@ -1,6 +1,6 @@
 <configuration>
 	<timestamp key="bySecond" datePattern="yyyy-MM-dd_HH-mm-ss" />
-	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
+	<appender name="FILE" class="com.github.pseudoresonance.resonantbot.log.FileAppender">
 		<file>logs/${bySecond}.log</file>
 		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
 			<level>DEBUG</level>

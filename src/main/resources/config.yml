@@ -44,7 +44,7 @@ Data:
     file:
       type: file
       # Relative to plugin directory if not absolute
-      directory: Data
+      directory: data
     mysql:
       type: mysql
       host: 127.0.0.1

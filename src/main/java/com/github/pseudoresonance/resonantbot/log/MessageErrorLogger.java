@@ -33,7 +33,7 @@ public class MessageErrorLogger {
 				e.printStackTrace(ps);
 			}
 		} catch (IOException e1) {
-			ResonantBot.getLogger().error("Could not create error log!\n", e1);
+			ResonantBot.getBot().getLogger().error("Could not create error log!\n", e1);
 		}
 	}
 

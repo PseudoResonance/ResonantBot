@@ -20,7 +20,7 @@ public class FileAppender<E> extends ch.qos.logback.core.FileAppender<E> {
             fileName = file;
             super.fileName = file;
         } else {
-        	File f = new File(ResonantBot.getDir(), file);
+        	File f = new File(ResonantBot.getBot().getDirectory(), file);
             // Trim spaces from both ends. The users probably does not want
             // trailing spaces in file names.
             fileName = f.getAbsolutePath();

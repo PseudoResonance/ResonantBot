@@ -35,16 +35,12 @@ Bot:
 Data:
 
   # Data backend configuration
-  Backend: file
+  Backend: mysql
 
   # Define backends here:
   # Config key is the backend name
-  # type = backend type (file or mysql)
+  # type = backend type (mysql)
   Backends:
-    file:
-      type: file
-      # Relative to plugin directory if not absolute
-      directory: data
     mysql:
       type: mysql
       host: 127.0.0.1

@@ -7,43 +7,137 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Properties;
 import java.util.jar.JarFile;
 import javax.security.auth.login.LoginException;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.simpleyaml.configuration.file.YamlConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.pseudoresonance.resonantbot.api.DiscordBot;
 import com.github.pseudoresonance.resonantbot.api.Plugin;
 import com.github.pseudoresonance.resonantbot.data.Data;
+import com.github.pseudoresonance.resonantbot.language.LanguageManager;
 import com.github.pseudoresonance.resonantbot.listeners.ConnectionListener;
 import com.github.pseudoresonance.resonantbot.listeners.GuildListener;
 import com.github.pseudoresonance.resonantbot.listeners.MessageListener;
 import com.github.pseudoresonance.resonantbot.listeners.ReadyListener;
 
-import net.dv8tion.jda.bot.sharding.DefaultShardManagerBuilder;
-import net.dv8tion.jda.bot.sharding.ShardManager;
+import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
+import net.dv8tion.jda.api.sharding.ShardManager;
 
-public class ResonantBot {
-
-	private static Logger log;
-
-	private static HashMap<String, String> args;
-	private static File directory;
-	private static File langDirectory;
+public class ResonantBot implements DiscordBot {
 	
-	private static ShardManager client;
+	public static String name = "ResonantBot";
+
+	private Logger log;
+
+	private CommandLine arguments;
+	private File directory;
+	private File langDirectory;
+	private Properties versionInfo;
+	
+	private static DiscordBot bot;
+	private ShardManager jda;
+
+	protected boolean isBotJarFile = false;
+	protected boolean botJarFileChecked = false;
 	
 	public static void main(String[] args) {
-		ResonantBot.args = Startup.parseArgs(args);
-		directory = Startup.init(ResonantBot.args);
-		log = LoggerFactory.getLogger("ResonantBot");
+		bot = new ResonantBot();
+		((ResonantBot) bot).startup(args);
+	}
+	
+	public static DiscordBot getBot() {
+		return bot;
+	}
+	
+	private void startup(String[] args) {
+		parseArgs(args);
+		initVersionInfo();
+		initDirectory();
+		log = LoggerFactory.getLogger(name);
 		log.info("Using directory: " + directory);
-		Startup.setLogger(log);
+		initHooks();
+		log.debug("Completed initialization");
+		log.info("Starting up ResonantBot version: " + getVersionInfo().getProperty("version"));
+		copyFileFromJar("config.yml");
+		Config.init(log);
+		new File(directory, "plugins").mkdir();
+		log.debug("Using default language: " + Config.getLang());
+		log.debug("Copying bot language files");
+		initLanguageDirectory();
+		log.debug("Launching bot");
+		String token = Config.getToken();
+		if (arguments.hasOption("token"))
+			token = arguments.getOptionValue("token");
+		if (token == null || token.equals("")) {
+			log.error("Please set a bot token in the config!");
+			System.exit(1);
+		}
+		try {
+			jda = DefaultShardManagerBuilder.createDefault(Config.getToken()).setMaxReconnectDelay(32).setActivity(Config.getActivity()).build();
+		} catch (LoginException e) {
+			e.printStackTrace();
+		}
+		log.debug("Registering events");
+		jda.addEventListener(new MessageListener(), new ReadyListener(), new ConnectionListener(), new GuildListener());
+		log.debug("Initializing plugin loader");
+		PluginClassLoader.init();
+		log.info("Loading plugins");
+		PluginManager.reload();
+	}
+
+	private void parseArgs(String[] args) {
+		Options options = new Options();
+		Option directory = new Option("d", "directory", true, "Bot Directory");
+		options.addOption(directory);
+		Option token = new Option("t", "token", true, "Bot Token");
+		options.addOption(token);
+
+		CommandLineParser parser = new DefaultParser();
+		HelpFormatter formatter = new HelpFormatter();
+		CommandLine cmd;
+		try {
+			cmd = parser.parse(options, args);
+			arguments = cmd;
+		} catch (ParseException e) {
+			System.out.println(e.getMessage());
+			formatter.printHelp(name, options);
+			System.exit(1);
+		}
+	}
+
+	private void initDirectory() {
+		String dir = System.getProperty("user.dir");
+		if (arguments.hasOption("directory"))
+			dir = arguments.getOptionValue("directory");
+		File f = new File(dir);
+		try {
+			f.mkdirs();
+			System.setProperty("user.dir", f.getAbsolutePath());
+			directory = f;
+			return;
+		} catch (SecurityException e) {
+			System.err.println("Can't write to directory: " + dir);
+		}
+		System.err.println("Invalid directory: " + dir);
+		System.exit(1);
+		return;
+	}
+	
+	private void initLanguageDirectory() {
 		langDirectory = new File(directory, "localization");
 		langDirectory.mkdir();
-		Startup.defaultLangs(langDirectory);
+		LanguageManager.copyDefaultLanguageFiles(false);
 		boolean found = false;
 		for (File f : langDirectory.listFiles()) {
 			if (f.isFile() && f.getName().endsWith(".lang")) {
@@ -54,50 +148,9 @@ public class ResonantBot {
 			log.error("Could not find default language files! Please download a fresh copy of this bot! Shutting down!");
 			System.exit(1);
 		}
-		initHooks();
-		log.debug("Completed initialization");
-		log.info("Starting up ResonantBot");
-		copyFileFromJar("config.yml");
-		Config.init(log);
-		log.debug("Updating languages");
-		Language.updateAllLang();
-		new File(directory, "plugins").mkdir();
-		log.debug("Launching bot");
-		String token = Config.getToken();
-		if (ResonantBot.args.containsKey("token"))
-			token = ResonantBot.args.get("token");
-		if (token == null || token.equals("")) {
-			log.error("Please set a bot token in the config!");
-			System.exit(1);
-		}
-		try {
-			client = new DefaultShardManagerBuilder().setMaxReconnectDelay(32).setToken(Config.getToken()).setGame(Config.getGame()).build();
-		} catch (LoginException e) {
-			e.printStackTrace();
-		}
-		log.debug("Registering events");
-		client.addEventListener(new MessageListener(), new ReadyListener(), new ConnectionListener(), new GuildListener());
-		log.debug("Loading plugins");
-		PluginManager.reload();
-	}
-
-	public static File getDir() {
-		return directory;
-	}
-
-	public static File getLangDir() {
-		return langDirectory;
-	}
-
-	public static ShardManager getJDA() {
-		return client;
-	}
-
-	public static Logger getLogger() {
-		return log;
 	}
 	
-	private static void initHooks() {
+	private void initHooks() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
@@ -117,27 +170,27 @@ public class ResonantBot {
 			@Override
 			public void run() {
 				log.info("Logging out!");
-				if (client != null) {
-					client.shutdown();
+				if (jda != null) {
+					jda.shutdown();
 				}
 			}
 		});
 	}
 	
-	public static File copyFileFromJar(String path) {
+	public File copyFileFromJar(String path) {
 		return copyFileFromJar(path, false);
 	}
 	
-	public static File copyFileFromJar(String path, File dest) {
+	public File copyFileFromJar(String path, File dest) {
 		return copyFileFromJar(path, dest, false);
 	}
 	
-	public static File copyFileFromJar(String path, boolean override) {
+	public File copyFileFromJar(String path, boolean override) {
 		return copyFileFromJar(path, new File(directory, path), override);
 	}
 	
-	public static File copyFileFromJar(String path, File dest, boolean override) {
-		if ((Startup.checkedJar && Startup.jarFile) || ResonantBot.class.getResource("ResonantBot.class").toString().startsWith("jar")) {
+	public File copyFileFromJar(String path, File dest, boolean override) {
+		if ((botJarFileChecked && isBotJarFile) || ResonantBot.class.getResource("ResonantBot.class").toString().startsWith("jar")) {
 			try {
 				File jf = new File(ResonantBot.class.getProtectionDomain().getCodeSource().getLocation().toURI());
 				try (JarFile jar = new JarFile(jf)) {
@@ -155,8 +208,8 @@ public class ResonantBot {
 				} catch (IOException e) {}
 			} catch (URISyntaxException e1) {}
 		}
-		if (!Startup.jarFile) {
-			Startup.checkedJar = true;
+		if (!isBotJarFile) {
+			botJarFileChecked = true;
 			String str = ResonantBot.class.getProtectionDomain().getCodeSource().getLocation().toString();
 			File dirTemp = new File(str.substring(6, str.length())).getParentFile().getParentFile();
 			File dir = new File(dirTemp, "/src/main/resources/");
@@ -175,12 +228,53 @@ public class ResonantBot {
 		return null;
 	}
 	
-	public static YamlConfiguration getLanguage(String name, boolean overwrite) {
-		return YamlConfiguration.loadConfiguration(copyFileFromJar("localization/" + name + ".lang", overwrite));
+	public YamlConfiguration getLanguage(String name) {
+		return getLanguage(name, false);
 	}
 	
-	public static YamlConfiguration getLanguage(String name) {
-		return getLanguage(name, false);
+	public YamlConfiguration getLanguage(String name, boolean overwrite) {
+		return YamlConfiguration.loadConfiguration(copyFileFromJar("localization/" + name + ".lang", overwrite));
+	}
+
+	@Override
+	public void reconnect() {
+		jda.restart();
+	}
+
+	@Override
+	public File getDirectory() {
+		return directory;
+	}
+
+	@Override
+	public File getLanguageDirectory() {
+		return langDirectory;
+	}
+
+	@Override
+	public ShardManager getJDA() {
+		return jda;
+	}
+
+	@Override
+	public Logger getLogger() {
+		return log;
+	}
+	
+	@Override
+	public Properties getVersionInfo() {
+		return versionInfo;
+	}
+	
+	private void initVersionInfo() {
+		InputStream resourceAsStream = ResonantBot.class.getResourceAsStream("/version.properties");
+		versionInfo = new Properties();
+		try {
+			versionInfo.load( resourceAsStream );
+		} catch (Exception e) {
+			log.error("Unable to get version information!");
+			e.printStackTrace();
+		}
 	}
 
 }

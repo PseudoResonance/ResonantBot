@@ -11,7 +11,7 @@ import com.github.pseudoresonance.resonantbot.api.Plugin;
 
 public class CommandManager {
 	
-	private static Logger log = ResonantBot.getLogger();
+	private static Logger log = ResonantBot.getBot().getLogger();
 	
 	private static HashMap<String, Command> commands = new HashMap<String, Command>();
 	private static HashMap<Plugin, ArrayList<String>> commandPlugins = new HashMap<Plugin, ArrayList<String>>();

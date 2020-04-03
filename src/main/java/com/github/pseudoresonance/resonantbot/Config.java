@@ -13,10 +13,10 @@ import org.slf4j.Logger;
 
 import com.github.pseudoresonance.resonantbot.data.Backend;
 import com.github.pseudoresonance.resonantbot.data.Data;
-import com.github.pseudoresonance.resonantbot.data.FileBackend;
 import com.github.pseudoresonance.resonantbot.data.MySQLBackend;
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.entities.Game;
+
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Activity;
 
 public class Config {
 	
@@ -29,7 +29,7 @@ public class Config {
 	private static String prefix = "|";
 	private static long owner = 0;
 	private static String lang = "en-US";
-	private static Game.GameType statusType = Game.GameType.LISTENING;
+	private static Activity.ActivityType statusType = Activity.ActivityType.LISTENING;
 	private static String status = "%servers% Servers | %prefix%help";
 	
 	private static String backend = "file";
@@ -37,7 +37,7 @@ public class Config {
 	
 	public static void loadConfig() {
 		log.debug("Loading config");
-		File f = ResonantBot.copyFileFromJar("config.yml");
+		File f = ResonantBot.getBot().copyFileFromJar("config.yml");
 		try {
 			yaml = new YamlFile(f);
 			try {
@@ -60,7 +60,7 @@ public class Config {
 			String statusTypeString = statusTypeTemp.toUpperCase().trim();
 			if (statusTypeString.equals("PLAYING"))
 				statusTypeString = "DEFAULT";
-			statusType = Game.GameType.valueOf(statusTypeString);
+			statusType = Activity.ActivityType.valueOf(statusTypeString);
 			status = yaml.getString("Bot.Status");
 			if (status == null) status = "%servers% Servers | %prefix%help";
 			
@@ -74,6 +74,7 @@ public class Config {
 				String type = be.getString("type");
 				switch (type) {
 				case "mysql":
+				default:
 					String host = be.getString("host");
 					int port = be.getInt("port");
 					String username = be.getString("username");
@@ -94,16 +95,6 @@ public class Config {
 					MySQLBackend mb = new MySQLBackend(key, host, port, username, password, database, prefix, ssl);
 					backends.put(key, mb);
 					break;
-				case "file":
-				default:
-					String dir = be.getString("directory");
-					if (dir != null) {
-						File file = new File(ResonantBot.getDir(), dir);
-						FileBackend fb = new FileBackend(key, file);
-						backends.put(key, fb);
-					} else {
-						log.error("Directory for backend: " + key + " is missing!");
-					}
 				}
 			}
 			if (backends.size() > 0) {
@@ -187,6 +178,7 @@ public class Config {
 	public static void setLang(String lang) {
 		if (yaml == null)
 			loadConfig();
+		lang = lang.toLowerCase();
 		Config.lang = lang;
 		yaml.set("Bot.Lang", lang);
 		saveConfig();
@@ -206,7 +198,7 @@ public class Config {
 		saveConfig();
 	}
 
-	public static void setStatusType(Game.GameType statusType) {
+	public static void setStatusType(Activity.ActivityType statusType) {
 		if (yaml == null)
 			loadConfig();
 		Config.statusType = statusType;
@@ -214,7 +206,7 @@ public class Config {
 		saveConfig();
 	}
 
-	public static void setStatus(Game.GameType statusType, String status) {
+	public static void setStatus(Activity.ActivityType statusType, String status) {
 		if (yaml == null)
 			loadConfig();
 		Config.status = status;
@@ -228,21 +220,21 @@ public class Config {
 		if (yaml == null)
 			loadConfig();
 		String status = Config.status;
-		if (ResonantBot.getJDA() != null) {
+		if (ResonantBot.getBot().getJDA() != null) {
 			status = status.replaceAll(Pattern.quote("%prefix%"), prefix);
 			status = status.replaceAll(Pattern.quote("%servers%"),
-					String.valueOf(ResonantBot.getJDA().getGuilds().size()));
+					String.valueOf(ResonantBot.getBot().getJDA().getGuilds().size()));
 			status = status.replaceAll(Pattern.quote("%ping%"),
-					String.valueOf(ResonantBot.getJDA().getAveragePing()) + "ms");
+					String.valueOf(ResonantBot.getBot().getJDA().getAverageGatewayPing()) + "ms");
 			status = status.replaceAll(Pattern.quote("%shards%"),
-					String.valueOf(ResonantBot.getJDA().getShardsTotal()));
+					String.valueOf(ResonantBot.getBot().getJDA().getShardsTotal()));
 		} else {
 			status = prefix + "help";
 		}
 		return status;
 	}
 
-	public static Game.GameType getStatusType() {
+	public static Activity.ActivityType getStatusType() {
 		if (yaml == null)
 			loadConfig();
 		return statusType;
@@ -280,24 +272,24 @@ public class Config {
 		return backends;
 	}
 
-	public static Game getGame() {
+	public static Activity getActivity() {
 		if (yaml == null)
 			loadConfig();
-		Game game = Game.listening(prefix + "help");
-		if (statusType != Game.GameType.STREAMING)
-			game = Game.of(statusType, getStatus());
+		Activity game = Activity.listening(prefix + "help");
+		if (statusType != Activity.ActivityType.STREAMING)
+			game = Activity.of(statusType, getStatus());
 		else {
 			String[] split = getStatus().split(Pattern.quote("|"), 2);
-			game = Game.of(statusType, split[0], split[1]);
+			game = Activity.of(statusType, split[0], split[1]);
 		}
 		return game;
 	}
 
 	public static void updateStatus() {
-		List<JDA> statuses = ResonantBot.getJDA().getShards();
-		Game game = getGame();
+		List<JDA> statuses = ResonantBot.getBot().getJDA().getShards();
+		Activity game = getActivity();
 		for (JDA jda : statuses) {
-			jda.getPresence().setGame(game);
+			jda.getPresence().setActivity(game);
 		}
 	}
 

@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.github.pseudoresonance.resonantbot.api.Plugin;
+import com.github.pseudoresonance.resonantbot.language.LanguageManager;
 
 public final class PluginFileLoader {
 
@@ -19,13 +20,13 @@ public final class PluginFileLoader {
 
 	public static Plugin loadPlugin(File file) throws IOException {
 		if (!file.exists()) {
-			throw new FileNotFoundException(Language.getMessage("main.doesNotExist", file.getPath()));
+			throw new FileNotFoundException(LanguageManager.getLanguage().getMessage("main.doesNotExist", file.getPath()));
 		} else {
 			PluginClassLoader loader = null;
 			try {
 				loader = new PluginClassLoader(PluginFileLoader.class.getClassLoader(), file);
 			} catch (IllegalStateException e) {
-				ResonantBot.getLogger().error(Language.getMessage("main.genericLoadingError", file.getName()) + "\n", e);
+				ResonantBot.getBot().getLogger().error(LanguageManager.getLanguage().getMessage("main.genericLoadingError", file.getName()) + "\n", e);
 				throw e;
 			} catch (IOException e) {
 				throw e;
@@ -63,30 +64,30 @@ public final class PluginFileLoader {
 
 	public static void enablePlugin(Plugin plugin) {
 		if (!plugin.isEnabled()) {
-			ResonantBot.getLogger().info(Language.getMessage("main.enablingPlugin", plugin.getName()));
+			ResonantBot.getBot().getLogger().info(LanguageManager.getLanguage().getMessage("main.enablingPlugin", plugin.getName(), LanguageManager.getLanguage().getMessage("main.version", plugin.getVersion())));
 			Plugin plug = (Plugin) plugin;
 			PluginClassLoader pluginLoader = (PluginClassLoader) plug.getClassLoader();
 			if (!loaders.contains(pluginLoader)) {
 				loaders.add(pluginLoader);
-				ResonantBot.getLogger().info(Language.getMessage("main.enablingPluginUnregisteredLoader", plugin.getName()));
+				ResonantBot.getBot().getLogger().info(LanguageManager.getLanguage().getMessage("main.enablingPluginUnregisteredLoader", plugin.getName()));
 			}
 			try {
 				plug.setEnabled(true);
 			} catch (Throwable arg4) {
-				ResonantBot.getLogger().warn(Language.getMessage("main.enablingPluginError", plugin.getName()));
+				ResonantBot.getBot().getLogger().warn(LanguageManager.getLanguage().getMessage("main.enablingPluginError", plugin.getName()));
 			}
 		}
 	}
 
 	public static void disablePlugin(Plugin plugin) {
 		if (plugin.isEnabled()) {
-			ResonantBot.getLogger().info(Language.getMessage("main.disablingPlugin", plugin.getName()));
+			ResonantBot.getBot().getLogger().info(LanguageManager.getLanguage().getMessage("main.disablingPlugin", plugin.getName(), LanguageManager.getLanguage().getMessage("main.version", plugin.getVersion())));
 			Plugin plug = (Plugin) plugin;
 			ClassLoader cloader = plug.getClassLoader();
 			try {
 				plug.setEnabled(false);
 			} catch (Throwable arg4) {
-				ResonantBot.getLogger().warn(Language.getMessage("main.disablingPluginError", plugin.getName()));
+				ResonantBot.getBot().getLogger().warn(LanguageManager.getLanguage().getMessage("main.disablingPluginError", plugin.getName()));
 			}
 			if (cloader instanceof PluginClassLoader) {
 				PluginClassLoader loader = (PluginClassLoader) cloader;

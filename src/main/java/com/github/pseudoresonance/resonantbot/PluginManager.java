@@ -4,13 +4,8 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Set;
-import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -18,12 +13,13 @@ import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.simpleyaml.configuration.file.YamlConfiguration;
 
 import com.github.pseudoresonance.resonantbot.api.Plugin;
+import com.github.pseudoresonance.resonantbot.language.LanguageManager;
 
-import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.MessageChannel;
 
 public class PluginManager {
 	
-	private static final File dir = new File(ResonantBot.getDir(), "plugins");
+	private static final File dir = new File(ResonantBot.getBot().getDirectory(), "plugins");
 	
 	private static DualHashBidiMap<File, Plugin> plugins = new DualHashBidiMap<File, Plugin>();
 	private static ArrayList<String> pluginNames = new ArrayList<String>();
@@ -37,31 +33,30 @@ public class PluginManager {
 		File[] newFiles = dir.listFiles();
 		for (File f : newFiles) {
 			if (f.getName().endsWith(".jar")) {
-				ResonantBot.getLogger().info(Language.getMessage("main.foundPluginJar", f.getName()));
+				ResonantBot.getBot().getLogger().info(LanguageManager.getLanguage().getMessage("main.foundPluginJar", f.getName()));
 				loadBatch(f, false);
 			}
 		}
-		Language.updateAllLang();
 		for (Plugin m : plugins.values()) {
 			try {
 				PluginFileLoader.enablePlugin(m);
 			} catch (Exception e) {
-				ResonantBot.getLogger().error(Language.getMessage("main.enablingPluginError", m.getName()), e);
+				ResonantBot.getBot().getLogger().error(LanguageManager.getLanguage().getMessage("main.enablingPluginError", m.getName()), e);
 			}
 		}
 		pluginNames.sort(String::compareToIgnoreCase);
 	}
 	
 	private static String loadBatch(File f, boolean enable) {
-		ResonantBot.getLogger().info(Language.getMessage("main.loadingPluginJar", f.getName()));
+		ResonantBot.getBot().getLogger().info(LanguageManager.getLanguage().getMessage("main.loadingPluginJar", f.getName()));
 		Plugin p;
 		try {
 			p = PluginFileLoader.loadPlugin(f);
 		} catch (IOException e) {
 			e.printStackTrace();
-			return Language.getMessage("main.errorLoadingJar", f.getName());
+			return LanguageManager.getLanguage().getMessage("main.errorLoadingJar", f.getName());
 		} catch (IllegalStateException e) {
-			return Language.getMessage("main.errorLoadingJar", f.getName());
+			return LanguageManager.getLanguage().getMessage("main.errorLoadingJar", f.getName());
 		}
 		if (p != null) {
 			plugins.put(f, p);
@@ -69,28 +64,28 @@ public class PluginManager {
 				PluginFileLoader.enablePlugin(p);
 			}
 			pluginNames.add(p.getName());
-			copyDefaultLang(p);
-			return Language.getMessage("main.completedLoadingPlugin", f.getName());
+			LanguageManager.copyDefaultPluginLanguageFiles(p, false);
+			return LanguageManager.getLanguage().getMessage("main.completedLoadingPlugin", p.getName(), LanguageManager.getLanguage().getMessage("main.version", p.getVersion()));
 		} else
-			return Language.getMessage("main.jarNotFound", f.getName());
+			return LanguageManager.getLanguage().getMessage("main.jarNotFound", f.getName());
 	}
 	
 	public static String load(File f, boolean enable, long id) {
-		ResonantBot.getLogger().info(Language.getMessage("main.loadingPluginJar", f.getName()));
+		ResonantBot.getBot().getLogger().info(LanguageManager.getLanguage().getMessage("main.loadingPluginJar", f.getName()));
 		Plugin p;
 		try {
 			p = PluginFileLoader.loadPlugin(f);
 		} catch (IOException e) {
 			e.printStackTrace();
 			if (id == -1)
-				return Language.getMessage("main.errorLoadingJar", f.getName());
+				return LanguageManager.getLanguage().getMessage("main.errorLoadingJar", f.getName());
 			else
-				return Language.getMessage(id, "main.errorLoadingJar", f.getName());
+				return LanguageManager.getLanguage(id).getMessage("main.errorLoadingJar", f.getName());
 		} catch (IllegalStateException e) {
 			if (id == -1)
-				return Language.getMessage("main.errorLoadingJar", f.getName());
+				return LanguageManager.getLanguage().getMessage("main.errorLoadingJar", f.getName());
 			else
-				return Language.getMessage(id, "main.errorLoadingJar", f.getName());
+				return LanguageManager.getLanguage(id).getMessage("main.errorLoadingJar", f.getName());
 		}
 		if (p != null) {
 			plugins.put(f, p);
@@ -99,17 +94,16 @@ public class PluginManager {
 			}
 			pluginNames.add(p.getName());
 			pluginNames.sort(String::compareToIgnoreCase);
-			copyDefaultLang(p);
-			Language.updateAllLang();
+			LanguageManager.copyDefaultPluginLanguageFiles(p, false);
 			if (id == -1)
-				return Language.getMessage("main.completedLoadingPlugin", f.getName());
+				return LanguageManager.getLanguage().getMessage("main.completedLoadingPlugin", p.getName(), LanguageManager.getLanguage().getMessage("main.version", p.getVersion()));
 			else
-				return Language.getMessage(id, "main.completedLoadingPlugin", f.getName());
+				return LanguageManager.getLanguage(id).getMessage("main.completedLoadingPlugin", p.getName(), LanguageManager.getLanguage(id).getMessage("main.version", p.getVersion()));
 		} else
 			if (id == -1)
-				return Language.getMessage("main.jarNotFound", f.getName());
+				return LanguageManager.getLanguage().getMessage("main.jarNotFound", f.getName());
 			else
-				return Language.getMessage(id, "main.jarNotFound", f.getName());
+				return LanguageManager.getLanguage(id).getMessage("main.jarNotFound", f.getName());
 	}
 	
 	public static String load(File f, boolean enable) {
@@ -128,7 +122,7 @@ public class PluginManager {
 			CommandManager.unregisterPluginCommands(plugin);
 			PluginFileLoader.disablePlugin(plugin);
 			pluginNames.remove(plugin.getName());
-			ResonantBot.getLogger().info(Language.getMessage("main.unloadedPluginInJar", plugin.getName(), f.getName()));
+			ResonantBot.getBot().getLogger().info(LanguageManager.getLanguage().getMessage("main.unloadedPluginInJar", plugin.getName(), f.getName()));
 			plugins.remove(f, plugin);
 			plugin = null;
 			System.gc();
@@ -185,7 +179,7 @@ public class PluginManager {
 				return zin;
 			}
 		}
-		throw new EOFException(Language.getMessage("main.cannotFind", entry));
+		throw new EOFException(LanguageManager.getLanguage().getMessage("main.cannotFind", entry));
 	}
 	
 	protected static YamlConfiguration updateLanguage(YamlConfiguration global, boolean overwrite) {
@@ -220,32 +214,6 @@ public class PluginManager {
 	
 	public static YamlConfiguration getLanguage(Plugin plugin, String name) {
 		return getLanguage(plugin, name, false);
-	}
-	
-	public static void copyDefaultLang(Plugin plugin, boolean overwrite) {
-		JarFile jar = ((PluginClassLoader) plugin.getClass().getClassLoader()).getJar();
-		Enumeration<? extends ZipEntry> entries = jar.entries();
-		while (entries.hasMoreElements()) {
-			ZipEntry entry = entries.nextElement();
-			if (entry.getName().startsWith("localization/") && entry.getName().endsWith(".lang")) {
-				try (InputStream is = jar.getInputStream(entry)) {
-					if (is != null) {
-						File langDir = new File(plugin.getFolder(), "localization");
-						plugin.getFolder().mkdir();
-						langDir.mkdir();
-						String name = entry.getName().substring(13, entry.getName().length());
-						File dest = new File(langDir, name);
-						if (!dest.exists() || overwrite) {
-							Files.copy(is, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
-						}
-					}
-				} catch (IOException | NullPointerException e) {}
-			}
-		}
-	}
-	
-	public static void copyDefaultLang(Plugin plugin) {
-		copyDefaultLang(plugin, false);
 	}
 
 }

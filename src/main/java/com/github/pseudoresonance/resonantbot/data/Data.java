@@ -1,7 +1,5 @@
 package com.github.pseudoresonance.resonantbot.data;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,7 +7,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.simpleyaml.exceptions.InvalidConfigurationException;
 import org.slf4j.Logger;
 
 import com.github.pseudoresonance.resonantbot.Config;
@@ -34,30 +31,28 @@ public class Data {
 		DynamicTable.init(log);
 		Backend b = Config.getBackend();
 		backend = b;
-		if (b instanceof FileBackend)
-			((FileBackend) b).getFolder().mkdirs();
-		else if (b instanceof SQLBackend) {
+		String prefix = "";
+		if (b instanceof SQLBackend) {
 			SQLBackend sb = (SQLBackend) b;
 			sb.setup();
+			prefix = sb.getPrefix();
 		}
-		bot = new DynamicTable("bot", "VARCHAR(64)");
+		bot = new DynamicTable(prefix + "bot", "VARCHAR(64)");
 		bot.setup();
 		bot.addColumn(new Column("value", "VARCHAR(128)"));
-		users = new DynamicTable("users", "BIGINT UNSIGNED");
+		users = new DynamicTable(prefix + "users", "BIGINT UNSIGNED");
 		users.setup();
 		users.addColumn(new Column("permission_group", "VARCHAR(64)", "DEFAULT"));
-		guilds = new DynamicTable("guilds", "BIGINT UNSIGNED");
+		guilds = new DynamicTable(prefix + "guilds", "BIGINT UNSIGNED");
 		guilds.setup();
 		guilds.addColumn(new Column("language", "VARCHAR(8)", "en-US"));
-		guilds.addColumn(new Column("prefix", "VARCHAR(32)", "|"));
+		guilds.addColumn(new Column("prefix", "VARCHAR(32)", "NULL"));
 	}
 	
 	public static void updateBackend() {
 		Backend b = Config.getBackend();
 		if (!b.equals(backend)) {
-			if (b instanceof FileBackend)
-				((FileBackend) b).getFolder().mkdirs();
-			else if (b instanceof SQLBackend) {
+			if (b instanceof SQLBackend) {
 				SQLBackend sb = (SQLBackend) b;
 				sb.setup();
 			}
@@ -200,30 +195,7 @@ public class Data {
 	public static void getUserInfo() {
 		HashMap<Long, String> permissions = new HashMap<Long, String>();
 		Backend backend = Config.getBackend();
-		if (backend instanceof FileBackend) {
-			FileBackend fb = (FileBackend) backend;
-			File folder = new File(fb.getFolder(), "users");
-			if (!folder.exists()) {
-				permissionsCache = permissions;
-				return;
-			}
-			for (File f : folder.listFiles()) {
-				try {
-					if (f.isFile()) {
-						YamlConfig c = new YamlConfig(f);
-						c.load();
-						String permission = c.getString("permission_group");
-						String name = f.getName().substring(0, f.getName().length() - 4);
-						Long id = Long.valueOf(name);
-						permissions.put(id, permission);
-					}
-				} catch (SecurityException e) {
-					log.error("No permission to access: " + folder.getAbsolutePath());
-				} catch (IOException | InvalidConfigurationException e) {
-					log.error("Could not load: " + f.getPath(), e);
-				}
-			}
-		} else if (backend instanceof SQLBackend) {
+		if (backend instanceof SQLBackend) {
 			SQLBackend sb = (SQLBackend) backend;
 			BasicDataSource data = sb.getDataSource();
 			try (Connection c = data.getConnection()) {
@@ -254,33 +226,7 @@ public class Data {
 		HashMap<Long, String> languages = new HashMap<Long, String>();
 		HashMap<Long, String> prefixes = new HashMap<Long, String>();
 		Backend backend = Config.getBackend();
-		if (backend instanceof FileBackend) {
-			FileBackend fb = (FileBackend) backend;
-			File folder = new File(fb.getFolder(), "guilds");
-			if (!folder.exists()) {
-				languageCache = languages;
-				prefixCache = prefixes;
-				return;
-			}
-			for (File f : folder.listFiles()) {
-				try {
-					if (f.isFile()) {
-						YamlConfig c = new YamlConfig(f);
-						c.load();
-						String prefix = c.getString("prefix");
-						String language = c.getString("language");
-						String name = f.getName().substring(0, f.getName().length() - 4);
-						Long id = Long.valueOf(name);
-						languages.put(id, language);
-						prefixes.put(id, prefix);
-					}
-				} catch (SecurityException e) {
-					log.error("No permission to access: " + folder.getAbsolutePath());
-				} catch (IOException | InvalidConfigurationException e) {
-					log.error("Could not load: " + f.getPath(), e);
-				}
-			}
-		} else if (backend instanceof SQLBackend) {
+		if (backend instanceof SQLBackend) {
 			SQLBackend sb = (SQLBackend) backend;
 			BasicDataSource data = sb.getDataSource();
 			try (Connection c = data.getConnection()) {

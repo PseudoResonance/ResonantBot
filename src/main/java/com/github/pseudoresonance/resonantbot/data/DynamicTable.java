@@ -1,7 +1,5 @@
 package com.github.pseudoresonance.resonantbot.data;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -10,15 +8,8 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.simpleyaml.exceptions.InvalidConfigurationException;
 import org.slf4j.Logger;
 
 import com.github.pseudoresonance.resonantbot.Config;
@@ -38,10 +29,6 @@ public class DynamicTable {
 	
 	private String name;
 	private String idType;
-
-    private final ExecutorService exPool = Executors.newCachedThreadPool();
-	
-	private final List<String> locks = Collections.synchronizedList(new ArrayList<String>());
 	
 	public static void init(Logger log) {
 		DynamicTable.log = log;
@@ -57,7 +44,6 @@ public class DynamicTable {
 	 * Shuts down this instance of {@link DynamicTable}
 	 */
 	public void shutdown() {
-		exPool.shutdown();
 		instances.remove(this);
 	}
 	
@@ -65,9 +51,6 @@ public class DynamicTable {
 	 * Shuts down all instances of {@link DynamicTable}
 	 */
 	public static void shutdownAll() {
-		for (DynamicTable inst : instances) {
-			inst.exPool.shutdown();
-		}
 		instances.clear();
 	}
 
@@ -154,23 +137,7 @@ public class DynamicTable {
 	}
 
 	public void setup() {
-		if (backend instanceof FileBackend) {
-			FileBackend fb = (FileBackend) backend;
-			File dir = fb.getFolder();
-			File folder = new File(fb.getFolder(), name);
-			try {
-				if (!dir.isFile())
-					dir.mkdirs();
-				else if (dir.isFile())
-					log.error(dir.getAbsolutePath() + " for backend: " + backend.getName() + " is a file");
-				if (!folder.isFile())
-					folder.mkdir();
-				else if (folder.isFile())
-					log.error(folder.getAbsolutePath() + " for backend: " + backend.getName() + " is a file");
-			} catch (SecurityException e) {
-				log.error("No permission to access: " + folder.getAbsolutePath() + " for backend: " + backend.getName());
-			}
-		} else if (backend instanceof SQLBackend) {
+		if (backend instanceof SQLBackend) {
 			SQLBackend sb = (SQLBackend) backend;
 			BasicDataSource data = sb.getDataSource();
 			try (Connection c = data.getConnection()) {
@@ -343,29 +310,7 @@ public class DynamicTable {
 		}
 		if (data.containsKey(id))
 			data.put(id, original);
-		if (backend instanceof FileBackend) {
-			FileBackend fb = (FileBackend) backend;
-			File folder = new File(fb.getFolder(), name);
-			try {
-				File f = new File(folder, id + ".yml");
-				try {
-					if (!f.isDirectory()) {
-						YamlConfig c = new YamlConfig(f);
-						if (f.exists())
-							c.load();
-						for (String key : changed.keySet()) {
-							Object value = changed.get(key);
-							c.set(key, value);
-						}
-						saveYaml(c);
-					}
-				} catch (IOException | InvalidConfigurationException e) {
-					log.error("Could not load: " + f.getPath(), e);
-				}
-			} catch (SecurityException e) {
-				log.error("No permission to access: " + folder.getAbsolutePath());
-			}
-		} else if (backend instanceof SQLBackend) {
+		if (backend instanceof SQLBackend) {
 			SQLBackend sb = (SQLBackend) backend;
 			BasicDataSource data = sb.getDataSource();
 			try (Connection c = data.getConnection()) {
@@ -415,26 +360,7 @@ public class DynamicTable {
 		original.put(key, value);
 		if (data.containsKey(id))
 			data.put(id, original);
-		if (backend instanceof FileBackend) {
-			FileBackend fb = (FileBackend) backend;
-			File folder = new File(fb.getFolder(), name);
-			try {
-				File f = new File(folder, id + ".yml");
-				try {
-					if (!f.isDirectory()) {
-						YamlConfig c = new YamlConfig(f);
-						if (f.exists())
-							c.load();
-						c.set(key, value);
-						saveYaml(c);
-					}
-				} catch (IOException | InvalidConfigurationException e) {
-					log.error("Could not load: " + f.getPath(), e);
-				}
-			} catch (SecurityException e) {
-				log.error("No permission to access: " + folder.getAbsolutePath());
-			}
-		} else if (backend instanceof SQLBackend) {
+		if (backend instanceof SQLBackend) {
 			SQLBackend sb = (SQLBackend) backend;
 			BasicDataSource data = sb.getDataSource();
 			try (Connection c = data.getConnection()) {
@@ -479,26 +405,7 @@ public class DynamicTable {
 	}
 
 	private Object getSingle(String id, String key) {
-		if (backend instanceof FileBackend) {
-			FileBackend fb = (FileBackend) backend;
-			File folder = new File(fb.getFolder(), name);
-			try {
-				File f = new File(folder, id + ".yml");
-				try {
-					if (f.isFile()) {
-						YamlConfig c = new YamlConfig(f);
-						if (f.exists())
-							c.load();
-						Object o = c.get(key);
-						return o;
-					}
-				} catch (IOException | InvalidConfigurationException e) {
-					log.error("Could not load: " + f.getPath(), e);
-				}
-			} catch (SecurityException e) {
-				log.error("No permission to access: " + folder.getAbsolutePath());
-			}
-		} else if (backend instanceof SQLBackend) {
+		if (backend instanceof SQLBackend) {
 			SQLBackend sb = (SQLBackend) backend;
 			BasicDataSource data = sb.getDataSource();
 			try (Connection c = data.getConnection()) {
@@ -526,30 +433,7 @@ public class DynamicTable {
 	}
 
 	private HashMap<String, Object> get(String id) {
-		if (backend instanceof FileBackend) {
-			FileBackend fb = (FileBackend) backend;
-			File folder = new File(fb.getFolder(), name);
-			try {
-				File f = new File(folder, id + ".yml");
-				try {
-					if (f.isFile()) {
-						YamlConfig c = new YamlConfig(f);
-						if (f.exists())
-							c.load();
-						Set<String> keys = c.getKeys(false);
-						HashMap<String, Object> result = new HashMap<String, Object>(keys.size());
-						for (String s : keys) {
-							result.put(s, c.get(s));
-						}
-						return result;
-					}
-				} catch (IOException | InvalidConfigurationException e) {
-					log.error("Could not load: " + f.getPath(), e);
-				}
-			} catch (SecurityException e) {
-				log.error("No permission to access: " + folder.getAbsolutePath());
-			}
-		} else if (backend instanceof SQLBackend) {
+		if (backend instanceof SQLBackend) {
 			SQLBackend sb = (SQLBackend) backend;
 			BasicDataSource data = sb.getDataSource();
 			try (Connection c = data.getConnection()) {
@@ -587,34 +471,7 @@ public class DynamicTable {
 	}
 
 	private void setBackend(Backend b, HashMap<String, HashMap<String, Object>> values) {
-		if (b instanceof FileBackend) {
-			FileBackend fb = (FileBackend) b;
-			fb.getFolder().mkdir();
-			File folder = new File(fb.getFolder(), name);
-			folder.mkdir();
-			try {
-				for (String uuid : values.keySet()) {
-					File f = new File(folder, uuid + ".yml");
-					try {
-						if (!f.isDirectory()) {
-							HashMap<String, Object> playerData = values.get(uuid);
-							YamlConfig c = new YamlConfig(f);
-							if (f.exists())
-								c.load();
-							for (String key : playerData.keySet()) {
-								Object value = playerData.get(key);
-								c.set(key, value);
-							}
-							saveYaml(c);
-						}
-					} catch (IOException | InvalidConfigurationException e) {
-						log.error("Could not load: " + f.getPath(), e);
-					}
-				}
-			} catch (SecurityException e) {
-				log.error("No permission to access: " + folder.getAbsolutePath());
-			}
-		} else if (b instanceof SQLBackend) {
+		if (b instanceof SQLBackend) {
 			SQLBackend sb = (SQLBackend) b;
 			if (sb instanceof MySQLBackend) {
 				MySQLBackend mb = (MySQLBackend) sb;
@@ -649,34 +506,7 @@ public class DynamicTable {
 
 	private HashMap<String, HashMap<String, Object>> getBackend(Backend b) {
 		HashMap<String, HashMap<String, Object>> allData = new HashMap<String, HashMap<String, Object>>();
-		if (b instanceof FileBackend) {
-			FileBackend fb = (FileBackend) b;
-			fb.getFolder().mkdir();
-			File folder = new File(fb.getFolder(), name);
-			folder.mkdir();
-			try {
-				File[] files = folder.listFiles();
-				for (File f : files) {
-					try {
-						if (f.getName().endsWith(".yml")) {
-							YamlConfig c = new YamlConfig(f);
-							if (f.exists())
-								c.load();
-							Set<String> keys = c.getKeys(false);
-							HashMap<String, Object> result = new HashMap<String, Object>(keys.size());
-							for (String s : keys) {
-								result.put(s, c.get(s));
-							}
-							allData.put(f.getName().substring(0, f.getName().length() - 4), result);
-						}
-					} catch (IOException | InvalidConfigurationException e) {
-						log.error("Could not load: " + f.getPath(), e);
-					}
-				}
-			} catch (SecurityException e) {
-				log.error("No permission to access: " + folder.getAbsolutePath());
-			}
-		} else if (b instanceof SQLBackend) {
+		if (b instanceof SQLBackend) {
 			SQLBackend sb = (SQLBackend) b;
 			if (sb instanceof MySQLBackend) {
 				MySQLBackend mb = (MySQLBackend) sb;

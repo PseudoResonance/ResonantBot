@@ -89,6 +89,8 @@ public class CommandManager {
 		if (plugin != null) {
 			LinkedHashMap<String, Command> ret = new LinkedHashMap<String, Command>();
 			ArrayList<String> cmds = CommandManager.commandPlugins.get(plugin);
+			if (cmds == null)
+				return null;
 			for (String cmd : cmds) {
 				ret.put(cmd, commands.get(cmd));
 			}

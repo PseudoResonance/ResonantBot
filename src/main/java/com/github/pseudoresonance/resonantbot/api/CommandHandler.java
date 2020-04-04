@@ -168,12 +168,7 @@ public class CommandHandler extends Command {
 
 		@Override
 		public boolean test(MessageReceivedEvent e, String command, String[] args) {
-			try {
-			if (run != null)
-				return run.test(e, command, args);
-			} catch (Exception ex) {
-			}
-			return false;
+			return run.test(e, command, args);
 		}
 	}
 	

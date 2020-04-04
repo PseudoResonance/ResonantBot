@@ -31,6 +31,7 @@ import com.github.pseudoresonance.resonantbot.listeners.GuildListener;
 import com.github.pseudoresonance.resonantbot.listeners.MessageListener;
 import com.github.pseudoresonance.resonantbot.listeners.ReadyListener;
 import com.github.pseudoresonance.resonantbot.permissions.PermissionGroup;
+import com.github.pseudoresonance.resonantbot.permissions.PermissionManager;
 
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
@@ -77,6 +78,8 @@ public class ResonantBot implements DiscordBot {
 		log.debug("Initializing config");
 		copyFileFromJar("config.yml");
 		Config.loadConfig();
+		log.debug("Setting up permissions");
+		PermissionManager.init();
 		log.debug("Loading data");
 		Data.init();
 		Data.setUserPermissions(Config.getOwner(), PermissionGroup.BOT_OWNER);

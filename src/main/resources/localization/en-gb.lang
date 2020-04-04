@@ -65,6 +65,7 @@ main:
   validRateLimit: "Please add a valid rate limit!"
   savedAPIKey: "Saved API key"
   validAPIKey: "Please add a valid API key!"
+  noAPIKey: "No API key has been set!"
   none: "None"
   version: "v{$1$}"
   fetchingData: "Fetching data! Please wait!"

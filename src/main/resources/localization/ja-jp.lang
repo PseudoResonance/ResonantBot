@@ -65,6 +65,7 @@ main:
   validRateLimit: "有効なレート制限を指定して下さい！"
   savedAPIKey: "APIキーを設定しました！"
   validAPIKey: "有効なAPIキーを指定して下さい！"
+  noAPIKey: "APIキーが設定されていません！"
   none: "なし"
   version: "v{$1$}"
   fetchingData: "データを取得しています！お待ち下さい！"

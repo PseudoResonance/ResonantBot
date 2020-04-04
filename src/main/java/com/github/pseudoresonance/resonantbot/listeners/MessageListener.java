@@ -60,7 +60,7 @@ public class MessageListener extends ListenerAdapter {
 						}
 					});
 				} else
-					e.getChannel().sendMessage(LanguageManager.getLanguage(e).getMessage("main.noPermission", command)).queue();
+					e.getChannel().sendMessage(LanguageManager.getLanguage(e).getMessage("main.noPermission", parts[0])).queue();
 			}
 			return;
 		}

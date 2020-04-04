@@ -96,37 +96,34 @@ public class CommandHandler extends Command {
 
 	@Override
 	public void onCommand(MessageReceivedEvent e, String command, HashSet<PermissionGroup> userPermissions, String[] args) {
-		if (userPermissions.contains(permissionNode)) {
-			int lastI = 0;
-			RunnableMap lastValidNode = null;
-			RunnableMap lastNode = commandMap;
-			for (int i = 0; i < args.length; i++) {
-				RunnableMap node = lastNode.get(args[i].toLowerCase());
-				if (node != null) {
-					if (userPermissions.contains(node.getPermissionNode())) {
-						if (node.isRunnable()) {
-							lastValidNode = node;
-							lastI = i;
-						}
-						lastNode = node;
+		int lastI = 0;
+		RunnableMap lastValidNode = null;
+		RunnableMap lastNode = commandMap;
+		for (int i = 0; i < args.length; i++) {
+			RunnableMap node = lastNode.get(args[i].toLowerCase());
+			if (node != null) {
+				if (userPermissions.contains(node.getPermissionNode())) {
+					if (node.isRunnable()) {
+						lastValidNode = node;
+						lastI = i;
 					}
-				} else
-					break;
-			}
-			if (lastValidNode != null)
-				if (lastValidNode.test(e, command, Arrays.copyOfRange(args, lastI + 1, args.length)))
-					return;
-			String subCommands = "";
-			for (Entry<String, RunnableMap> entry : lastNode.entrySet())
-				if (userPermissions.contains(entry.getValue().getPermissionNode()))
-					subCommands += "`" + entry.getKey() + "`, ";
-			if (subCommands.length() > 2)
-				subCommands = subCommands.substring(0, subCommands.length() - 2);
-			else if (subCommands.isEmpty())
-				subCommands = LanguageManager.getLanguage(e).getMessage("main.none");
-			e.getChannel().sendMessage(LanguageManager.getLanguage(e).getMessage("main.validSubcommands", subCommands)).queue();
-		} else
-			e.getChannel().sendMessage(LanguageManager.getLanguage(e).getMessage("main.noPermission", command)).queue();
+					lastNode = node;
+				}
+			} else
+				break;
+		}
+		if (lastValidNode != null)
+			if (lastValidNode.test(e, command, Arrays.copyOfRange(args, lastI + 1, args.length)))
+				return;
+		String subCommands = "";
+		for (Entry<String, RunnableMap> entry : lastNode.entrySet())
+			if (userPermissions.contains(entry.getValue().getPermissionNode()))
+				subCommands += "`" + entry.getKey() + "`, ";
+		if (subCommands.length() > 2)
+			subCommands = subCommands.substring(0, subCommands.length() - 2);
+		else if (subCommands.isEmpty())
+			subCommands = LanguageManager.getLanguage(e).getMessage("main.none");
+		e.getChannel().sendMessage(LanguageManager.getLanguage(e).getMessage("main.validSubcommands", subCommands)).queue();
 	}
 	
 	/**

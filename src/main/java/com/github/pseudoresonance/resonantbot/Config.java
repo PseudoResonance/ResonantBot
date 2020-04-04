@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import com.github.pseudoresonance.resonantbot.data.Backend;
 import com.github.pseudoresonance.resonantbot.data.Data;
 import com.github.pseudoresonance.resonantbot.data.MySQLBackend;
+import com.github.pseudoresonance.resonantbot.permissions.PermissionGroup;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
@@ -158,11 +159,14 @@ public class Config {
 	}
 
 	public static void setOwner(long owner) {
+		long lastOwner = Config.owner;
 		if (yaml == null)
 			loadConfig();
 		Config.owner = owner;
 		yaml.set("Bot.Owner", owner);
 		saveConfig();
+		Data.setUserPermissions(owner, PermissionGroup.BOT_OWNER);
+		Data.setUserPermissions(lastOwner, PermissionGroup.BOT_ADMIN);
 	}
 
 	public static void setOwner(String owner) {

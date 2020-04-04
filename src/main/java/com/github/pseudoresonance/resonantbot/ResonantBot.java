@@ -30,6 +30,7 @@ import com.github.pseudoresonance.resonantbot.listeners.ConnectionListener;
 import com.github.pseudoresonance.resonantbot.listeners.GuildListener;
 import com.github.pseudoresonance.resonantbot.listeners.MessageListener;
 import com.github.pseudoresonance.resonantbot.listeners.ReadyListener;
+import com.github.pseudoresonance.resonantbot.permissions.PermissionGroup;
 
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
@@ -78,6 +79,7 @@ public class ResonantBot implements DiscordBot {
 		Config.loadConfig();
 		log.debug("Loading data");
 		Data.init();
+		Data.setUserPermissions(Config.getOwner(), PermissionGroup.BOT_OWNER);
 		log.debug("Using default language: " + Config.getLang());
 		initLanguageDirectory();
 		log.debug("Completed initialization");

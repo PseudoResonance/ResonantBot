@@ -1,6 +1,7 @@
 package com.github.pseudoresonance.resonantbot.listeners;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -12,6 +13,8 @@ import com.github.pseudoresonance.resonantbot.api.Command;
 import com.github.pseudoresonance.resonantbot.data.Data;
 import com.github.pseudoresonance.resonantbot.language.LanguageManager;
 import com.github.pseudoresonance.resonantbot.log.MessageErrorLogger;
+import com.github.pseudoresonance.resonantbot.permissions.PermissionGroup;
+import com.github.pseudoresonance.resonantbot.permissions.PermissionManager;
 
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.events.message.GenericMessageEvent;
@@ -36,24 +39,28 @@ public class MessageListener extends ListenerAdapter {
 			String[] parts = command.split("\\s+");
 			Command c = CommandManager.getCommand(parts[0].toLowerCase());
 			if (c != null) {
-				executor.execute(() -> {
-					try {
-						String[] args = new String[0];
-						if (parts.length > 1) {
-							args = ArrayUtils.remove(parts, 0);
+				HashSet<PermissionGroup> permissions = PermissionManager.getUserPermissions(e.getMember(), e.getAuthor());
+				if (c.getPermissionNode() == PermissionGroup.DEFAULT || permissions.contains(c.getPermissionNode())) {
+					executor.execute(() -> {
+						try {
+							String[] args = new String[0];
+							if (parts.length > 1) {
+								args = ArrayUtils.remove(parts, 0);
+							}
+							c.onCommand(e, parts[0], permissions, args);
+						} catch (Exception ex) {
+							String error = "Error on Message: \"" + e.getMessage().getContentRaw() + "\" (" + e.getMessageId() + ") from: " + e.getAuthor().getName() + " (" + e.getAuthor().getId() + ") in ";
+							if (e.getChannelType() == ChannelType.PRIVATE)
+								error += "Direct Messages";
+							else
+								error += "Guild: " + e.getGuild().getName() + " (" + e.getGuild().getId() + ")";
+							ResonantBot.getBot().getLogger().error(error + "\n", ex);
+							logger.logError(error, ex);
+							e.getChannel().sendMessage(LanguageManager.getLanguage(e).getMessage("main.errorOccurred")).queue();
 						}
-						c.onCommand(e, parts[0], args);
-					} catch (Exception ex) {
-						String error = "Error on Message: \"" + e.getMessage().getContentRaw() + "\" (" + e.getMessageId() + ") from: " + e.getAuthor().getName() + " (" + e.getAuthor().getId() + ") in ";
-						if (e.getChannelType() == ChannelType.PRIVATE)
-							error += "Direct Messages";
-						else
-							error += "Guild: " + e.getGuild().getName() + " (" + e.getGuild().getId() + ")";
-						ResonantBot.getBot().getLogger().error(error + "\n", ex);
-						logger.logError(error, ex);
-						e.getChannel().sendMessage(LanguageManager.getLanguage(e).getMessage("main.errorOccurred")).queue();
-					}
-				});
+					});
+				} else
+					e.getChannel().sendMessage(LanguageManager.getLanguage(e).getMessage("main.noPermission", command)).queue();
 			}
 			return;
 		}

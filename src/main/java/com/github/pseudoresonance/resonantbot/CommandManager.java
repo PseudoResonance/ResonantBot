@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 
 import com.github.pseudoresonance.resonantbot.api.Command;
 import com.github.pseudoresonance.resonantbot.api.Plugin;
+import com.github.pseudoresonance.resonantbot.permissions.PermissionGroup;
 
 public class CommandManager {
 	
@@ -37,10 +38,10 @@ public class CommandManager {
 	}
 	
 	public static boolean registerCommand(Plugin plugin, Command cmd, String name, String descriptionKey) {
-		return registerCommand(plugin, cmd, name, descriptionKey, "");
+		return registerCommand(plugin, cmd, name, descriptionKey, PermissionGroup.DEFAULT);
 	}
 	
-	public static boolean registerCommand(Plugin plugin, Command cmd, String name, String descriptionKey, String permissionNode) {
+	public static boolean registerCommand(Plugin plugin, Command cmd, String name, String descriptionKey, PermissionGroup permissionNode) {
 		name = name.toLowerCase();
 		if (commands.containsKey(name)) {
 			return false;
@@ -130,7 +131,7 @@ public class CommandManager {
 		return CommandManager.commandPlugins;
 	}
 	
-	private static boolean injectCommandData(Command cmd, String name, String descriptionKey, String permissionNode) {
+	private static boolean injectCommandData(Command cmd, String name, String descriptionKey, PermissionGroup permissionNode) {
 		try {
 			nameField.set(cmd, name);
 			descriptionField.set(cmd, descriptionKey);

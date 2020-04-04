@@ -7,8 +7,8 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 import com.github.pseudoresonance.resonantbot.CommandManager;
-import com.github.pseudoresonance.resonantbot.data.Data;
 import com.github.pseudoresonance.resonantbot.language.LanguageManager;
+import com.github.pseudoresonance.resonantbot.permissions.PermissionGroup;
 
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
@@ -16,7 +16,7 @@ public class CommandHandler extends Command {
 	
 	private final String cmdName;
 	private final String descriptionKey;
-	private final String permissionNode;
+	private final PermissionGroup permissionNode;
 	
 	private final RunnableMap commandMap = new RunnableMap();
 
@@ -31,7 +31,7 @@ public class CommandHandler extends Command {
 	public CommandHandler(String cmdName, String descriptionKey) {
 		this.cmdName = cmdName;
 		this.descriptionKey = descriptionKey;
-		this.permissionNode = "";
+		this.permissionNode = PermissionGroup.DEFAULT;
 	}
 
 	/**
@@ -41,10 +41,10 @@ public class CommandHandler extends Command {
 	 * @param descriptionKey Localization key of command description
 	 * @param permissionNode Command permission node
 	 */
-	public CommandHandler(String cmdName, String descriptionKey, String permissionNode) {
+	public CommandHandler(String cmdName, String descriptionKey, PermissionGroup permissionNode) {
 		this.cmdName = cmdName;
 		this.descriptionKey = descriptionKey;
-		this.permissionNode = permissionNode.toLowerCase();
+		this.permissionNode = permissionNode;
 	}
 	
 	/**
@@ -67,7 +67,7 @@ public class CommandHandler extends Command {
 	 * Takes a {@link MessageReceivedEvent}, String of command name, and String array of arguments, and returns boolean on whether or not running subcommand was successful
 	 */
 	public void registerSubcommand(String cmdPath, TriPredicate<MessageReceivedEvent, String, String[]> run) {
-		registerSubcommand(cmdPath, run, "");
+		registerSubcommand(cmdPath, run, PermissionGroup.DEFAULT);
 	}
 	
 	/**
@@ -79,7 +79,7 @@ public class CommandHandler extends Command {
 	 * Takes a {@link MessageReceivedEvent}, String of command name, and String array of arguments, and returns boolean on whether or not running subcommand was successful
 	 * @param permissionNode Permission node to register subcommand with
 	 */
-	public void registerSubcommand(String cmdPath, TriPredicate<MessageReceivedEvent, String, String[]> run, String permissionNode) {
+	public void registerSubcommand(String cmdPath, TriPredicate<MessageReceivedEvent, String, String[]> run, PermissionGroup permissionNode) {
 		String[] split = cmdPath.toLowerCase().split(" ");
 		RunnableMap lastNode = commandMap;
 		for (int i = 0; i < split.length; i++) {
@@ -95,16 +95,15 @@ public class CommandHandler extends Command {
 	}
 
 	@Override
-	public void onCommand(MessageReceivedEvent e, String command, String[] args) {
-		HashSet<String> permissions = Data.getUserPermissions(e.getMember(), e.getAuthor());
-		if (permissions.contains(permissionNode)) {
+	public void onCommand(MessageReceivedEvent e, String command, HashSet<PermissionGroup> userPermissions, String[] args) {
+		if (userPermissions.contains(permissionNode)) {
 			int lastI = 0;
 			RunnableMap lastValidNode = null;
 			RunnableMap lastNode = commandMap;
 			for (int i = 0; i < args.length; i++) {
 				RunnableMap node = lastNode.get(args[i].toLowerCase());
 				if (node != null) {
-					if (permissions.contains(node.getPermissionNode().toLowerCase())) {
+					if (userPermissions.contains(node.getPermissionNode())) {
 						if (node.isRunnable()) {
 							lastValidNode = node;
 							lastI = i;
@@ -119,7 +118,7 @@ public class CommandHandler extends Command {
 					return;
 			String subCommands = "";
 			for (Entry<String, RunnableMap> entry : lastNode.entrySet())
-				if (permissions.contains(entry.getValue().getPermissionNode().toLowerCase()))
+				if (userPermissions.contains(entry.getValue().getPermissionNode()))
 					subCommands += "`" + entry.getKey() + "`, ";
 			if (subCommands.length() > 2)
 				subCommands = subCommands.substring(0, subCommands.length() - 2);
@@ -147,7 +146,7 @@ public class CommandHandler extends Command {
 	/**
 	 * Returns the command permission node
 	 */
-	public String getPermissionNode() {
+	public PermissionGroup getPermissionNode() {
 		return permissionNode;
 	}
 	
@@ -155,14 +154,14 @@ public class CommandHandler extends Command {
 		private static final long serialVersionUID = -4337096481562532645L;
 		
 		private TriPredicate<MessageReceivedEvent, String, String[]> run = null;
-		private String permissionNode = "";
+		private PermissionGroup permissionNode = PermissionGroup.DEFAULT;
 		
-		public void attachRunnable(TriPredicate<MessageReceivedEvent, String, String[]> run, String permissionNode) {
+		public void attachRunnable(TriPredicate<MessageReceivedEvent, String, String[]> run, PermissionGroup permissionNode) {
 			this.run = run;
 			this.permissionNode = permissionNode;
 		}
 		
-		public String getPermissionNode() {
+		public PermissionGroup getPermissionNode() {
 			return permissionNode;
 		}
 		

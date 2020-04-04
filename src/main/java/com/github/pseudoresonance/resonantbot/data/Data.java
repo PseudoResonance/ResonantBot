@@ -4,9 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map.Entry;
 
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
@@ -15,11 +13,7 @@ import org.slf4j.Logger;
 
 import com.github.pseudoresonance.resonantbot.Config;
 import com.github.pseudoresonance.resonantbot.ResonantBot;
-
-import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.User;
+import com.github.pseudoresonance.resonantbot.permissions.PermissionGroup;
 
 public class Data {
 
@@ -31,27 +25,13 @@ public class Data {
 	private static DynamicTable users = null;
 	private static DynamicTable guilds = null;
 
-	private static HashMap<Long, String> permissionsCache = new HashMap<Long, String>();
-	private static HashMap<Long, DualHashBidiMap<String, Long>> roleCache = new HashMap<Long, DualHashBidiMap<String, Long>>();
+	private static HashMap<Long, PermissionGroup> permissionsCache = new HashMap<Long, PermissionGroup>();
+	private static HashMap<Long, DualHashBidiMap<PermissionGroup, Long>> roleCache = new HashMap<Long, DualHashBidiMap<PermissionGroup, Long>>();
 	private static HashMap<Long, String> prefixCache = new HashMap<Long, String>();
 	private static HashMap<Long, String> languageCache = new HashMap<Long, String>();
-
-	private static HashMap<String, String[]> definedGroups = new HashMap<String, String[]>();
-	private static HashMap<String, HashSet<String>> inheritanceCache = new HashMap<String, HashSet<String>>();
 	
 
 	public static void init() {
-		definedGroups.put("bot_owner", new String[] {"bot_admin"});
-		definedGroups.put("bot_admin", new String[] {"owner"});
-		definedGroups.put("owner", new String[] {"admin"});
-		definedGroups.put("admin", new String[] {"moderator"});
-		definedGroups.put("moderator", new String[] {"dj"});
-		definedGroups.put("dj", new String[] {"member"});
-		definedGroups.put("member", new String[] {"default"});
-		definedGroups.put("default", new String[0]);
-		
-		calculateInheritance();
-		
 		log.debug("Initializing data storage");
 		Backend b = Config.getBackend();
 		backend = b;
@@ -95,99 +75,44 @@ public class Data {
 		guilds.migrateBackends(from, to);
 	}
 
-	private static void calculateInheritance() {
-		for (String group : definedGroups.keySet()) {
-			HashSet<String> inherits = new HashSet<String>();
-			Collections.addAll(inherits, definedGroups.get(group));
-			inheritanceCache.put(group, inherits);
-		}
-		for (String group : inheritanceCache.keySet()) {
-			HashSet<String> inherits = inheritanceCache.get(group);
-			inherits.addAll(calculateInheritedGroups(group));
-		}
-		for (String group : inheritanceCache.keySet()) {
-			HashSet<String> inherits = inheritanceCache.get(group);
-			inherits.add(group);
-		}
-	}
-	
-	@SuppressWarnings("unchecked")
-	private static HashSet<String> calculateInheritedGroups(String group) {
-		HashSet<String> current = inheritanceCache.get(group);
-		HashSet<String> inherits = new HashSet<String>();
-		if (current != null) {
-			inherits.addAll(current);
-			for (String g : (HashSet<String>) inherits.clone())
-				inherits.addAll(calculateInheritedGroups(g));
-		}
-		return inherits;
-	}
-
-	public static HashSet<String> getUserPermissions(Member member, User user) {
-		if (member == null) {
-			HashSet<String> groups = new HashSet<String>();
-			groups.add("");
-			groups.addAll(getInheritedGroups(getUserPermissions(user.getIdLong())));
-			groups.addAll(getInheritedGroups("owner"));
-			return groups;
-		} else {
-			if (roleCache.size() == 0)
-				getGuildInfo();
-			HashSet<String> groups = new HashSet<String>();
-			groups.add("");
-			groups.addAll(getInheritedGroups(getUserPermissions(member.getIdLong())));
-			if (member.isOwner())
-				groups.addAll(getInheritedGroups("owner"));
-			else if (member.hasPermission(Permission.ADMINISTRATOR))
-				groups.addAll(getInheritedGroups("admin"));
-			DualHashBidiMap<String, Long> guildMap = roleCache.get(member.getGuild().getIdLong());
-			if (guildMap != null) {
-				for (Role role : member.getRoles()) {
-					String group = guildMap.getKey(role.getIdLong());
-					if (group != null)
-						groups.addAll(getInheritedGroups(group.toLowerCase()));
-				}
-			}
-			return groups;
-		}
-	}
-
-	public static HashSet<String> getInheritedGroups(String group) {
-		return inheritanceCache.get(group.toLowerCase());
-	}
-
-	public static void setRolePermission(long guildId, long roleId, String permission) {
-		DualHashBidiMap<String, Long> guildMap = roleCache.get(guildId);
+	public static void setRolePermission(long guildId, long roleId, PermissionGroup permission) {
+		DualHashBidiMap<PermissionGroup, Long> guildMap = roleCache.get(guildId);
 		if (guildMap == null) {
-			guildMap = new DualHashBidiMap<String, Long>();
+			guildMap = new DualHashBidiMap<PermissionGroup, Long>();
 			roleCache.put(guildId, guildMap);
 		}
 		guildMap.put(permission, roleId);
 		setGuildSetting(guildId, "group_roles", concatenateGuildMap(guildMap));
 	}
 
-	public static String getRolePermission(long guildId, long roleId) {
-		DualHashBidiMap<String, Long> guildMap = roleCache.get(guildId);
+	public static PermissionGroup getRolePermission(long guildId, long roleId) {
+		DualHashBidiMap<PermissionGroup, Long> guildMap = roleCache.get(guildId);
 		if (guildMap == null) {
-			guildMap = new DualHashBidiMap<String, Long>();
+			guildMap = new DualHashBidiMap<PermissionGroup, Long>();
 			roleCache.put(guildId, guildMap);
 		}
 		return guildMap.getKey(roleId);
 	}
+	
+	public static DualHashBidiMap<PermissionGroup, Long> getGuildRoles(long guildId) {
+		if (roleCache.size() == 0)
+			getGuildInfo();
+		return roleCache.get(guildId);
+	}
 
 	public static void removeRolePermission(long guildId, long roleId) {
-		DualHashBidiMap<String, Long> guildMap = roleCache.get(guildId);
+		DualHashBidiMap<PermissionGroup, Long> guildMap = roleCache.get(guildId);
 		if (guildMap == null) {
-			guildMap = new DualHashBidiMap<String, Long>();
+			guildMap = new DualHashBidiMap<PermissionGroup, Long>();
 			roleCache.put(guildId, guildMap);
 		}
 		guildMap.removeValue(roleId);
 		setGuildSetting(guildId, "group_roles", concatenateGuildMap(guildMap));
 	}
 
-	private static String concatenateGuildMap(DualHashBidiMap<String, Long> guildMap) {
+	private static String concatenateGuildMap(DualHashBidiMap<PermissionGroup, Long> guildMap) {
 		String ret = "";
-		for (Entry<String, Long> entry : guildMap.entrySet())
+		for (Entry<PermissionGroup, Long> entry : guildMap.entrySet())
 			ret += entry.getKey() + "=" + entry.getValue() + ";";
 		ret = ret.substring(0, ret.length() - 1);
 		return ret;
@@ -273,9 +198,9 @@ public class Data {
 		return getGuildSettings(String.valueOf(id));
 	}
 
-	public static void setUserPermissions(Long id, String group) {
+	public static void setUserPermissions(Long id, PermissionGroup group) {
 		permissionsCache.put(id, group);
-		setUserSetting(id, "permission_group", group);
+		setUserSetting(id, "permission_group", group.toString().toUpperCase());
 	}
 
 	public static void setGuildPrefix(Long id, String prefix) {
@@ -288,11 +213,11 @@ public class Data {
 		setGuildSetting(id, "language", language);
 	}
 
-	public static String getUserPermissions(Long id) {
+	public static PermissionGroup getUserPermissions(Long id) {
 		if (permissionsCache.size() == 0)
 			getUserInfo();
-		String ret = permissionsCache.get(id);
-		return (ret == null) ? "default" : ret;
+		PermissionGroup ret = permissionsCache.get(id);
+		return (ret == null) ? PermissionGroup.DEFAULT : ret;
 	}
 
 	public static String getGuildPrefix(Long id) {
@@ -314,7 +239,7 @@ public class Data {
 	}
 
 	public static void getUserInfo() {
-		HashMap<Long, String> permissions = new HashMap<Long, String>();
+		HashMap<Long, PermissionGroup> permissions = new HashMap<Long, PermissionGroup>();
 		Backend backend = Config.getBackend();
 		if (backend instanceof SQLBackend) {
 			SQLBackend sb = (SQLBackend) backend;
@@ -324,7 +249,7 @@ public class Data {
 					try (ResultSet rs = ps.executeQuery()) {
 						while (rs.next()) {
 							Long id = rs.getLong(1);
-							String permission = rs.getString(2);
+							PermissionGroup permission = PermissionGroup.valueOf(rs.getString(2));
 							permissions.put(id, permission);
 						}
 					} catch (SQLException e) {
@@ -358,13 +283,13 @@ public class Data {
 							String language = rs.getString(2);
 							String prefix = rs.getString(3);
 							String roles = rs.getString(4);
-							DualHashBidiMap<String, Long> roleMap = new DualHashBidiMap<String, Long>();
+							DualHashBidiMap<PermissionGroup, Long> roleMap = new DualHashBidiMap<PermissionGroup, Long>();
 							if (roles != null) {
 								String[] splitRoles = roles.split(";");
 								for (String s : splitRoles) {
 									String[] split = s.split("=");
 									if (split.length >= 2)
-										roleMap.put(split[0], Long.valueOf(split[1]));
+										roleMap.put(PermissionGroup.valueOf(split[0].toUpperCase()), Long.valueOf(split[1]));
 								}
 							}
 							roleCache.put(id, roleMap);

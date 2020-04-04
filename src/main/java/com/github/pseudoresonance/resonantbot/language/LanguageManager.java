@@ -36,8 +36,9 @@ public class LanguageManager {
 	private static final ConcurrentHashMap<String, Language> languages = new ConcurrentHashMap<String, Language>();
 	
 	private static String defaultLanguage = Config.getLang();
-	
-	private final static Pattern escapePattern = Pattern.compile("([*_~`\\$\\\\\\|])");
+
+	private final static Pattern escapePattern = Pattern.compile("([*_~\\|`\\$\\\\])");
+	private final static Pattern codeEscapePattern = Pattern.compile("(`)");
 	private final static Pattern prefixPattern = Pattern.compile("[^ -\"$-.0-?A-\\[\\]\\^a-~]");
 	
 	private static boolean botJarFileChecked = false;
@@ -498,6 +499,19 @@ public class LanguageManager {
 	public static String escape(Object toEscape) {
 		String esc = toEscape.toString();
 		Matcher m = escapePattern.matcher(esc);
+		String ret = m.replaceAll("\\\\$1");
+		return ret;
+	}
+	
+	/**
+	 * Escape input for output to Discord chat in code blocks
+	 * 
+	 * @param toEscape Object to escape
+	 * @return Escaped string
+	 */
+	public static String codeEscape(Object toEscape) {
+		String esc = toEscape.toString();
+		Matcher m = codeEscapePattern.matcher(esc);
 		String ret = m.replaceAll("\\\\$1");
 		return ret;
 	}

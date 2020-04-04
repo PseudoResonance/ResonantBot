@@ -1,5 +1,6 @@
 package com.github.pseudoresonance.resonantbot;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -15,26 +16,52 @@ public class CommandManager {
 	
 	private static HashMap<String, Command> commands = new HashMap<String, Command>();
 	private static HashMap<Plugin, ArrayList<String>> commandPlugins = new HashMap<Plugin, ArrayList<String>>();
+
+	private static Field nameField = null;
+	private static Field descriptionField = null;
+	private static Field permissionField = null;
 	
-	public static boolean registerCommand(String text, Command c, Plugin plugin) {
-		text = text.toLowerCase();
-		if (commands.containsKey(text)) {
+	protected static void init() {
+		try {
+			nameField = Command.class.getDeclaredField("name");
+			descriptionField = Command.class.getDeclaredField("descriptionKey");
+			permissionField = Command.class.getDeclaredField("permissionNode");
+			nameField.setAccessible(true);
+			descriptionField.setAccessible(true);
+			permissionField.setAccessible(true);
+		} catch (NoSuchFieldException | SecurityException e) {
+			log.error("Unable to initialize CommandManager!");
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+	
+	public static boolean registerCommand(Plugin plugin, Command cmd, String name, String descriptionKey) {
+		return registerCommand(plugin, cmd, name, descriptionKey, "");
+	}
+	
+	public static boolean registerCommand(Plugin plugin, Command cmd, String name, String descriptionKey, String permissionNode) {
+		name = name.toLowerCase();
+		if (commands.containsKey(name)) {
 			return false;
 		} else {
-			log.debug("Adding command: " + text);
-			commands.put(text, c);
-			if (commandPlugins.containsKey(plugin)) {
-				ArrayList<String> list = commandPlugins.get(plugin);
-				if (!list.contains(text))
-					list.add(text);
-				list.sort(String::compareToIgnoreCase);
-				commandPlugins.put(plugin, list);
-			} else {
-				ArrayList<String> list = new ArrayList<String>();
-				list.add(text);
-				commandPlugins.put(plugin, list);
-			}
-			return true;
+			log.debug("Adding command: " + name);
+			if (injectCommandData(cmd, name, descriptionKey, permissionNode)) {
+				commands.put(name, cmd);
+				if (commandPlugins.containsKey(plugin)) {
+					ArrayList<String> list = commandPlugins.get(plugin);
+					if (!list.contains(name))
+						list.add(name);
+					list.sort(String::compareToIgnoreCase);
+					commandPlugins.put(plugin, list);
+				} else {
+					ArrayList<String> list = new ArrayList<String>();
+					list.add(name);
+					commandPlugins.put(plugin, list);
+				}
+				return true;
+			} else
+				return false;
 		}
 	}
 	
@@ -101,6 +128,19 @@ public class CommandManager {
 	
 	public static HashMap<Plugin, ArrayList<String>> getAllPluginCommands() {
 		return CommandManager.commandPlugins;
+	}
+	
+	private static boolean injectCommandData(Command cmd, String name, String descriptionKey, String permissionNode) {
+		try {
+			nameField.set(cmd, name);
+			descriptionField.set(cmd, descriptionKey);
+			permissionField.set(cmd, permissionNode);
+			return true;
+		} catch (IllegalArgumentException | IllegalAccessException e) {
+			log.error("Unable to set command data on cmd: " + name);
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 }

@@ -13,12 +13,13 @@ import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 
 import com.github.pseudoresonance.resonantbot.Config;
+import com.github.pseudoresonance.resonantbot.ResonantBot;
 
 public class DynamicTable {
 	
 	private static final ArrayList<DynamicTable> instances = new ArrayList<DynamicTable>();
 	
-	private static Logger log = null;
+	private static Logger log = ResonantBot.getBot().getLogger();
 
 	private Backend backend = Config.getBackend();
 
@@ -29,10 +30,6 @@ public class DynamicTable {
 	
 	private String name;
 	private String idType;
-	
-	public static void init(Logger log) {
-		DynamicTable.log = log;
-	}
 	
 	public DynamicTable(String name, String idType) {
 		this.name = name;
@@ -78,9 +75,14 @@ public class DynamicTable {
 							String value = col.getType();
 							String defaultValue = col.getDefaultValue();
 							try {
-								if (!defaultValue.equalsIgnoreCase("NULL"))
-									defaultValue = "'" + defaultValue + "'";
-								st.execute("ALTER TABLE `" + sb.getPrefix() + name + "` MODIFY " + key + " " + value + " DEFAULT " + defaultValue + ";");
+								if (defaultValue == null)
+									defaultValue = "";
+								else {
+									if (!defaultValue.equalsIgnoreCase("NULL"))
+										defaultValue = "'NULL'";
+									defaultValue = " DEFAULT " + defaultValue;
+								}
+								st.execute("ALTER TABLE `" + sb.getPrefix() + name + "` MODIFY " + key + " " + value + defaultValue + ";");
 								return true;
 							} catch (SQLException e) {
 								int error = e.getErrorCode();
@@ -116,9 +118,14 @@ public class DynamicTable {
 					String value = col.getType();
 					String defaultValue = col.getDefaultValue();
 					try {
-						if (!defaultValue.equalsIgnoreCase("NULL"))
-							defaultValue = "'" + defaultValue + "'";
-						st.execute("ALTER TABLE `" + sb.getPrefix() + name + "` ADD " + key + " " + value + " DEFAULT " + defaultValue + ";");
+						if (defaultValue == null)
+							defaultValue = "";
+						else {
+							if (!defaultValue.equalsIgnoreCase("NULL"))
+								defaultValue = "'NULL'";
+							defaultValue = " DEFAULT " + defaultValue;
+						}
+						st.execute("ALTER TABLE `" + sb.getPrefix() + name + "` ADD " + key + " " + value + defaultValue + ";");
 						return true;
 					} catch (SQLException e) {
 						log.error("Error when adding column: " + key + " of type: " + value + " with default value: " + defaultValue + " in table: " + sb.getPrefix() + name + " in database: " + sb.getName());
@@ -184,8 +191,15 @@ public class DynamicTable {
 								String key = col.getName();
 								String value = col.getType();
 								String defaultValue = col.getDefaultValue();
+								if (defaultValue == null)
+									defaultValue = "";
+								else {
+									if (!defaultValue.equalsIgnoreCase("NULL"))
+										defaultValue = "'NULL'";
+									defaultValue = " DEFAULT " + defaultValue;
+								}
 								try {
-									st.execute("ALTER TABLE `" + sb.getPrefix() + name + "` ADD " + key + " " + value + " DEFAULT " + defaultValue + ";");
+									st.execute("ALTER TABLE `" + sb.getPrefix() + name + "` ADD " + key + " " + value + defaultValue + ";");
 								} catch (SQLException e) {
 									log.error("Error when adding column: " + key + " of type: " + value + " with default value: " + defaultValue + " in table: " + sb.getPrefix() + name + " in database: " + sb.getName());
 									log.error("SQLError " + e.getErrorCode() + ": (State: " + e.getSQLState() + ") - " + e.getMessage());
@@ -217,8 +231,15 @@ public class DynamicTable {
 									String key = col.getName();
 									String value = col.getType();
 									String defaultValue = col.getDefaultValue();
+									if (defaultValue == null)
+										defaultValue = "";
+									else {
+										if (!defaultValue.equalsIgnoreCase("NULL"))
+											defaultValue = "'NULL'";
+										defaultValue = " DEFAULT " + defaultValue;
+									}
 									try {
-										st.execute("ALTER TABLE `" + sb.getPrefix() + name + "` MODIFY " + key + " " + value + " DEFAULT " + defaultValue + ";");
+										st.execute("ALTER TABLE `" + sb.getPrefix() + name + "` MODIFY " + key + " " + value + defaultValue + ";");
 									} catch (SQLException e) {
 										int error = e.getErrorCode();
 										if (backend instanceof MySQLBackend) {
@@ -256,8 +277,15 @@ public class DynamicTable {
 									String key = col.getName();
 									String value = col.getType();
 									String defaultValue = col.getDefaultValue();
+									if (defaultValue == null)
+										defaultValue = "";
+									else {
+										if (!defaultValue.equalsIgnoreCase("NULL"))
+											defaultValue = "'NULL'";
+										defaultValue = " DEFAULT " + defaultValue;
+									}
 									try {
-										st.execute("ALTER TABLE `" + sb.getPrefix() + name + "` ADD " + key + " " + value + " DEFAULT " + defaultValue + ";");
+										st.execute("ALTER TABLE `" + sb.getPrefix() + name + "` ADD " + key + " " + value + defaultValue + ";");
 									} catch (SQLException e) {
 										log.error("Error when adding column: " + key + " of type: " + value + " with default value: " + defaultValue + " in table: " + sb.getPrefix() + name + " in database: " + sb.getName());
 										log.error("SQLError " + e.getErrorCode() + ": (State: " + e.getSQLState() + ") - " + e.getMessage());

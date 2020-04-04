@@ -20,7 +20,7 @@ import net.dv8tion.jda.api.entities.Activity;
 
 public class Config {
 	
-	private static Logger log = null;
+	private static Logger log = ResonantBot.getBot().getLogger();
 	
 	private static YamlFile yaml = null;
 
@@ -291,14 +291,6 @@ public class Config {
 		for (JDA jda : statuses) {
 			jda.getPresence().setActivity(game);
 		}
-	}
-
-	protected static void init(Logger log) {
-		Config.log = log;
-		log.debug("Initializing config");
-		loadConfig();
-		log.debug("Loading data");
-		Data.init(log);
 	}
 	
 	private synchronized static void saveConfig() {

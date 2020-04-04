@@ -32,6 +32,7 @@ date:
   locale: "ja-JP"
 
 main:
+  noPermission: "`{$1$}`を使う許可がありません！"
   privatePrefix: "ダイレクトメッセージのプレフィックスわ `{$1$}`"
   prefix: "{$1$} のプレフィックスわ `{$2$}`"
   noMainClass: "{$1$}　プラグインのplugin.jsonわありません"
@@ -62,3 +63,5 @@ main:
   rateLimit: "レート制限に達した！お待ちください！"
   none: "なし"
   version: "v{$1$}"
+  fetchingData: "データを取得しています！お待ち下さい！"
+  page: "ページ　{$1$}："

@@ -2,12 +2,24 @@ package com.github.pseudoresonance.resonantbot.api;
 
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-public interface Command {
+public abstract class Command {
 	
-	public void onCommand(MessageReceivedEvent e, String command, String[] args);
+	private String name;
+	private String descriptionKey;
+	private String permissionNode;
 	
-	public String getDesc(long guildID);
+	public String getName() {
+		return name;
+	}
 	
-	public boolean isHidden();
+	public String getDescriptionKey() {
+		return descriptionKey;
+	}
+	
+	public String getPermissionNode() {
+		return permissionNode;
+	}
+	
+	public abstract void onCommand(MessageReceivedEvent e, String command, String[] args);
 
 }

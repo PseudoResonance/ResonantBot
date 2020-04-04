@@ -62,19 +62,28 @@ public class ResonantBot implements DiscordBot {
 	
 	private void startup(String[] args) {
 		parseArgs(args);
+		init();
+		launch();
+		registerHooks();
+	}
+
+	private void init() {
+		log = LoggerFactory.getLogger(name);
 		initVersionInfo();
 		initDirectory();
-		log = LoggerFactory.getLogger(name);
 		log.info("Using directory: " + directory);
-		initHooks();
-		log.debug("Completed initialization");
 		log.info("Starting up ResonantBot version: " + getVersionInfo().getProperty("version"));
+		log.debug("Initializing config");
 		copyFileFromJar("config.yml");
-		Config.init(log);
-		new File(directory, "plugins").mkdir();
+		Config.loadConfig();
+		log.debug("Loading data");
+		Data.init();
 		log.debug("Using default language: " + Config.getLang());
-		log.debug("Copying bot language files");
 		initLanguageDirectory();
+		log.debug("Completed initialization");
+	}
+	
+	private void launch() {
 		log.debug("Launching bot");
 		String token = Config.getToken();
 		if (arguments.hasOption("token"))
@@ -90,7 +99,10 @@ public class ResonantBot implements DiscordBot {
 		}
 		log.debug("Registering events");
 		jda.addEventListener(new MessageListener(), new ReadyListener(), new ConnectionListener(), new GuildListener());
+		log.debug("Initializing command manager");
+		CommandManager.init();
 		log.debug("Initializing plugin loader");
+		new File(directory, "plugins").mkdir();
 		PluginClassLoader.init();
 		log.info("Loading plugins");
 		PluginManager.reload();
@@ -127,9 +139,9 @@ public class ResonantBot implements DiscordBot {
 			directory = f;
 			return;
 		} catch (SecurityException e) {
-			System.err.println("Can't write to directory: " + dir);
+			log.error("Can't write to directory: " + dir);
 		}
-		System.err.println("Invalid directory: " + dir);
+		log.error("Invalid directory: " + dir);
 		System.exit(1);
 		return;
 	}
@@ -150,7 +162,7 @@ public class ResonantBot implements DiscordBot {
 		}
 	}
 	
-	private void initHooks() {
+	private void registerHooks() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {

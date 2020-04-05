@@ -122,6 +122,19 @@ public class LanguageManager {
 	}
 	
 	/**
+	 * Reloads all language files
+	 * 
+	 * @return Whether or not all languages were reloaded
+	 */
+	public static boolean reloadLanguage() {
+		boolean result = true;
+		for (String lang : languages.keySet())
+			if (!reloadLanguage(lang))
+				result = false;
+		return result;
+	}
+	
+	/**
 	 * Reloads the given language files
 	 * 
 	 * @param lang Language to reload
@@ -194,6 +207,19 @@ public class LanguageManager {
 		if (!LocaleUtils.isAvailableLocale(locale))
 			return null;
 		return locale.toLanguageTag();
+	}
+	
+	/**
+	 * Resets all language files
+	 * 
+	 * @return Whether or not all languages were reset
+	 */
+	public static boolean resetLanguage() {
+		boolean result = true;
+		for (String lang : languages.keySet())
+			if (!resetLanguage(lang))
+				result = false;
+		return result;
 	}
 	
 	/**

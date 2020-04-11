@@ -27,6 +27,7 @@ public final class PluginFileLoader {
 				loader = new PluginClassLoader(PluginFileLoader.class.getClassLoader(), file);
 			} catch (IllegalStateException e) {
 				ResonantBot.getBot().getLogger().error(LanguageManager.getLanguage().getMessage("main.genericLoadingError", file.getName()) + "\n", e);
+				e.printStackTrace();
 				throw e;
 			} catch (IOException e) {
 				throw e;
@@ -72,9 +73,17 @@ public final class PluginFileLoader {
 				ResonantBot.getBot().getLogger().info(LanguageManager.getLanguage().getMessage("main.enablingPluginUnregisteredLoader", plugin.getName()));
 			}
 			try {
-				plug.setEnabled(true);
-			} catch (Throwable arg4) {
+				Thread thread = Thread.currentThread();
+				ClassLoader old = thread.getContextClassLoader();
+				thread.setContextClassLoader(plugin.getClassLoader());
+				try {
+					plug.setEnabled(true);
+				} finally {
+					thread.setContextClassLoader(old);
+				}
+			} catch (Throwable e) {
 				ResonantBot.getBot().getLogger().warn(LanguageManager.getLanguage().getMessage("main.enablingPluginError", plugin.getName()));
+				e.printStackTrace();
 			}
 		}
 	}
@@ -85,9 +94,17 @@ public final class PluginFileLoader {
 			Plugin plug = (Plugin) plugin;
 			ClassLoader cloader = plug.getClassLoader();
 			try {
-				plug.setEnabled(false);
-			} catch (Throwable arg4) {
+				Thread thread = Thread.currentThread();
+				ClassLoader old = thread.getContextClassLoader();
+				thread.setContextClassLoader(plugin.getClassLoader());
+				try {
+					plug.setEnabled(false);
+				} finally {
+					thread.setContextClassLoader(old);
+				}
+			} catch (Throwable e) {
 				ResonantBot.getBot().getLogger().warn(LanguageManager.getLanguage().getMessage("main.disablingPluginError", plugin.getName()));
+				e.printStackTrace();
 			}
 			if (cloader instanceof PluginClassLoader) {
 				PluginClassLoader loader = (PluginClassLoader) cloader;

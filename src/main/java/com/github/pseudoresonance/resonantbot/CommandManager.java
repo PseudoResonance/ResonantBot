@@ -21,15 +21,18 @@ public class CommandManager {
 	private static Field nameField = null;
 	private static Field descriptionField = null;
 	private static Field permissionField = null;
+	private static Field pluginField = null;
 	
 	protected static void init() {
 		try {
 			nameField = Command.class.getDeclaredField("name");
 			descriptionField = Command.class.getDeclaredField("descriptionKey");
 			permissionField = Command.class.getDeclaredField("permissionNode");
+			pluginField = Command.class.getDeclaredField("plugin");
 			nameField.setAccessible(true);
 			descriptionField.setAccessible(true);
 			permissionField.setAccessible(true);
+			pluginField.setAccessible(true);
 		} catch (NoSuchFieldException | SecurityException e) {
 			log.error("Unable to initialize CommandManager!");
 			e.printStackTrace();
@@ -47,7 +50,7 @@ public class CommandManager {
 			return false;
 		} else {
 			log.debug("Adding command: " + name);
-			if (injectCommandData(cmd, name, descriptionKey, permissionNode)) {
+			if (injectCommandData(cmd, name, descriptionKey, permissionNode, plugin)) {
 				commands.put(name, cmd);
 				if (commandPlugins.containsKey(plugin)) {
 					ArrayList<String> list = commandPlugins.get(plugin);
@@ -131,11 +134,12 @@ public class CommandManager {
 		return CommandManager.commandPlugins;
 	}
 	
-	private static boolean injectCommandData(Command cmd, String name, String descriptionKey, PermissionGroup permissionNode) {
+	private static boolean injectCommandData(Command cmd, String name, String descriptionKey, PermissionGroup permissionNode, Plugin plugin) {
 		try {
 			nameField.set(cmd, name);
 			descriptionField.set(cmd, descriptionKey);
 			permissionField.set(cmd, permissionNode);
+			pluginField.set(cmd, plugin);
 			return true;
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			log.error("Unable to set command data on cmd: " + name);

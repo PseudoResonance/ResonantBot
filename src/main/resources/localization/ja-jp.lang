@@ -61,6 +61,7 @@ main:
   errorOccurred: "エラーが発生しました！ボットの所有者に連絡して下さい！"
   validSubcommands: "有効なサブコマンド：　{$1$}"
   rateLimit: "レート制限に達した！お待ちください！"
+  serviceError: "外部サービスのエラーが発生しました！お待ちください！"
   savedRateLimit: "レート制限を設定しました！"
   validRateLimit: "有効なレート制限を指定して下さい！"
   savedAPIKey: "APIキーを設定しました！"

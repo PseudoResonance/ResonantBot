@@ -11,6 +11,7 @@ public abstract class Command {
 	private String name;
 	private String descriptionKey;
 	private PermissionGroup permissionNode;
+	private Plugin plugin;
 	
 	public String getName() {
 		return name;
@@ -22,6 +23,10 @@ public abstract class Command {
 	
 	public PermissionGroup getPermissionNode() {
 		return permissionNode;
+	}
+	
+	public Plugin getPlugin() {
+		return plugin;
 	}
 	
 	/**

@@ -61,6 +61,7 @@ main:
   errorOccurred: "An error has occurred! Please contact the bot owner!"
   validSubcommands: "Valid subcommands: {$1$}"
   rateLimit: "Rate limit reached! Please wait!"
+  serviceError: "External service error! Please wait!"
   savedRateLimit: "Saved rate limit"
   validRateLimit: "Please add a valid rate limit!"
   savedAPIKey: "Saved API key"

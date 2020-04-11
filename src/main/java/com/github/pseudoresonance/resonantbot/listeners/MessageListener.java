@@ -22,7 +22,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 public class MessageListener extends ListenerAdapter {
-	
+
 	private static final MessageErrorLogger logger = new MessageErrorLogger(new File(ResonantBot.getBot().getDirectory(), "errors"));
 	ExecutorService executor = Executors.newCachedThreadPool();
 
@@ -42,21 +42,28 @@ public class MessageListener extends ListenerAdapter {
 				HashSet<PermissionGroup> permissions = PermissionManager.getUserPermissions(e.getMember(), e.getAuthor());
 				if (c.getPermissionNode() == PermissionGroup.DEFAULT || permissions.contains(c.getPermissionNode())) {
 					executor.execute(() -> {
+						Thread thread = Thread.currentThread();
+						ClassLoader old = thread.getContextClassLoader();
+						thread.setContextClassLoader(c.getPlugin().getClassLoader());
 						try {
-							String[] args = new String[0];
-							if (parts.length > 1) {
-								args = ArrayUtils.remove(parts, 0);
+							try {
+								String[] args = new String[0];
+								if (parts.length > 1) {
+									args = ArrayUtils.remove(parts, 0);
+								}
+								c.onCommand(e, parts[0], permissions, args);
+							} catch (Exception ex) {
+								String error = "Error on Message: \"" + e.getMessage().getContentRaw() + "\" (" + e.getMessageId() + ") from: " + e.getAuthor().getName() + " (" + e.getAuthor().getId() + ") in ";
+								if (e.getChannelType() == ChannelType.PRIVATE)
+									error += "Direct Messages";
+								else
+									error += "Guild: " + e.getGuild().getName() + " (" + e.getGuild().getId() + ")";
+								ResonantBot.getBot().getLogger().error(error + "\n", ex);
+								logger.logError(error, ex);
+								e.getChannel().sendMessage(LanguageManager.getLanguage(e).getMessage("main.errorOccurred")).queue();
 							}
-							c.onCommand(e, parts[0], permissions, args);
-						} catch (Exception ex) {
-							String error = "Error on Message: \"" + e.getMessage().getContentRaw() + "\" (" + e.getMessageId() + ") from: " + e.getAuthor().getName() + " (" + e.getAuthor().getId() + ") in ";
-							if (e.getChannelType() == ChannelType.PRIVATE)
-								error += "Direct Messages";
-							else
-								error += "Guild: " + e.getGuild().getName() + " (" + e.getGuild().getId() + ")";
-							ResonantBot.getBot().getLogger().error(error + "\n", ex);
-							logger.logError(error, ex);
-							e.getChannel().sendMessage(LanguageManager.getLanguage(e).getMessage("main.errorOccurred")).queue();
+						} finally {
+							thread.setContextClassLoader(old);
 						}
 					});
 				} else
@@ -71,7 +78,7 @@ public class MessageListener extends ListenerAdapter {
 				e.getChannel().sendMessage(LanguageManager.getLanguage(e.getGuild().getIdLong()).getMessage("main.prefix", e.getGuild().getName(), Data.getGuildPrefix(e.getGuild().getIdLong()))).queue();
 		}
 	}
-	
+
 	public static String getPrefix(GenericMessageEvent e) {
 		return Data.getGuildPrefix((e.getChannelType() == ChannelType.PRIVATE ? e.getPrivateChannel() : e.getGuild()).getIdLong());
 	}

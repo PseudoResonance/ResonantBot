@@ -42,6 +42,7 @@ public class PluginManager {
 				PluginFileLoader.enablePlugin(m);
 			} catch (Exception e) {
 				ResonantBot.getBot().getLogger().error(LanguageManager.getLanguage().getMessage("main.enablingPluginError", m.getName()), e);
+				e.printStackTrace();
 			}
 		}
 		pluginNames.sort(String::compareToIgnoreCase);

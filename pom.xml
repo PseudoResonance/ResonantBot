@@ -8,7 +8,7 @@
 	<name>ResonantBot</name>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<revision>1.1.2</revision>
+		<revision>1.1.3</revision>
 		<jda_version>4.1.1_127</jda_version>
 	</properties>
 	<build>

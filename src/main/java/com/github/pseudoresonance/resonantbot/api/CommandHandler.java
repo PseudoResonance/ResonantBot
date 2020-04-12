@@ -17,6 +17,7 @@ public class CommandHandler extends Command {
 	private final String cmdName;
 	private final String descriptionKey;
 	private final PermissionGroup permissionNode;
+	private final String[] aliases;
 	
 	private final RunnableMap commandMap = new RunnableMap();
 
@@ -27,11 +28,10 @@ public class CommandHandler extends Command {
 	 * 
 	 * @param cmdName Name of command
 	 * @param descriptionKey Localization key of command description
+	 * @param aliases Command aliases
 	 */
-	public CommandHandler(String cmdName, String descriptionKey) {
-		this.cmdName = cmdName;
-		this.descriptionKey = descriptionKey;
-		this.permissionNode = PermissionGroup.DEFAULT;
+	public CommandHandler(String cmdName, String descriptionKey, String... aliases) {
+		this(cmdName, descriptionKey, PermissionGroup.DEFAULT, aliases);
 	}
 
 	/**
@@ -40,11 +40,13 @@ public class CommandHandler extends Command {
 	 * @param cmdName Name of command
 	 * @param descriptionKey Localization key of command description
 	 * @param permissionNode Command permission node
+	 * @param aliases Command aliases
 	 */
-	public CommandHandler(String cmdName, String descriptionKey, PermissionGroup permissionNode) {
+	public CommandHandler(String cmdName, String descriptionKey, PermissionGroup permissionNode, String... aliases) {
 		this.cmdName = cmdName;
 		this.descriptionKey = descriptionKey;
 		this.permissionNode = permissionNode;
+		this.aliases = aliases;
 	}
 	
 	/**
@@ -53,7 +55,7 @@ public class CommandHandler extends Command {
 	 * @param plugin Plugin to register command with
 	 */
 	public void register(Plugin plugin) {
-		CommandManager.registerCommand(plugin, this, cmdName, descriptionKey, permissionNode);
+		CommandManager.registerCommand(plugin, this, cmdName, descriptionKey, permissionNode, aliases);
 	}
 	
 	/**
@@ -145,6 +147,13 @@ public class CommandHandler extends Command {
 	 */
 	public PermissionGroup getPermissionNode() {
 		return permissionNode;
+	}
+	
+	/**
+	 * Returns the command aliases
+	 */
+	public String[] getAliases() {
+		return aliases;
 	}
 	
 	private static class RunnableMap extends HashMap<String, RunnableMap> implements TriPredicate<MessageReceivedEvent, String, String[]> {

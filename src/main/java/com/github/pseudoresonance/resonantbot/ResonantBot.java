@@ -33,22 +33,24 @@ import com.github.pseudoresonance.resonantbot.listeners.ReadyListener;
 import com.github.pseudoresonance.resonantbot.permissions.PermissionGroup;
 import com.github.pseudoresonance.resonantbot.permissions.PermissionManager;
 
+import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
+import net.dv8tion.jda.api.utils.MemberCachePolicy;
+import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 public class ResonantBot implements DiscordBot {
 	
-	public static String name = "ResonantBot";
+	public static String NAME = "ResonantBot";
+	
+	private static DiscordBot bot;
 
+	private ShardManager jda;
 	private Logger log;
-
 	private CommandLine arguments;
 	private File directory;
 	private File langDirectory;
 	private Properties versionInfo;
-	
-	private static DiscordBot bot;
-	private ShardManager jda;
 
 	protected boolean isBotJarFile = false;
 	protected boolean botJarFileChecked = false;
@@ -70,7 +72,7 @@ public class ResonantBot implements DiscordBot {
 	}
 
 	private void init() {
-		log = LoggerFactory.getLogger(name);
+		log = LoggerFactory.getLogger(NAME);
 		initVersionInfo();
 		initDirectory();
 		log.info("Using directory: " + directory);
@@ -98,7 +100,7 @@ public class ResonantBot implements DiscordBot {
 			System.exit(1);
 		}
 		try {
-			jda = DefaultShardManagerBuilder.createDefault(Config.getToken()).setMaxReconnectDelay(32).setActivity(Config.getActivity()).build();
+			jda = DefaultShardManagerBuilder.createDefault(Config.getToken()).enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_PRESENCES).setMemberCachePolicy(MemberCachePolicy.ONLINE).disableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOTE).setMaxReconnectDelay(32).setActivity(Config.getActivity()).build();
 		} catch (LoginException e) {
 			e.printStackTrace();
 		}
@@ -128,7 +130,7 @@ public class ResonantBot implements DiscordBot {
 			arguments = cmd;
 		} catch (ParseException e) {
 			System.out.println(e.getMessage());
-			formatter.printHelp(name, options);
+			formatter.printHelp(NAME, options);
 			System.exit(1);
 		}
 	}

@@ -4,7 +4,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
@@ -13,6 +15,7 @@ import org.slf4j.Logger;
 
 import com.github.pseudoresonance.resonantbot.Config;
 import com.github.pseudoresonance.resonantbot.ResonantBot;
+import com.github.pseudoresonance.resonantbot.api.Plugin;
 import com.github.pseudoresonance.resonantbot.permissions.PermissionGroup;
 
 public class Data {
@@ -21,6 +24,7 @@ public class Data {
 
 	private static Backend backend = null;
 
+	private static Map<Plugin, ArrayList<DynamicTable>> tables = new HashMap<Plugin, ArrayList<DynamicTable>>();
 	private static DynamicTable bot = null;
 	private static DynamicTable users = null;
 	private static DynamicTable guilds = null;
@@ -29,7 +33,6 @@ public class Data {
 	private static HashMap<Long, DualHashBidiMap<PermissionGroup, Long>> roleCache = new HashMap<Long, DualHashBidiMap<PermissionGroup, Long>>();
 	private static HashMap<Long, String> prefixCache = new HashMap<Long, String>();
 	private static HashMap<Long, String> languageCache = new HashMap<Long, String>();
-	
 
 	public static void init() {
 		log.debug("Initializing data storage");
@@ -39,14 +42,17 @@ public class Data {
 
 		bot = new DynamicTable("bot", "VARCHAR(64)");
 		bot.setup();
+		addTable(null, bot);
 		bot.addColumn(new Column("value", "VARCHAR(128)"));
 
 		users = new DynamicTable("users", "BIGINT UNSIGNED");
 		users.setup();
+		addTable(null, users);
 		users.addColumn(new Column("permission_group", "VARCHAR(64)", "DEFAULT"));
 
 		guilds = new DynamicTable("guilds", "BIGINT UNSIGNED");
 		guilds.setup();
+		addTable(null, guilds);
 		guilds.addColumn(new Column("language", "VARCHAR(8)", "en-US"));
 		guilds.addColumn(new Column("prefix", "VARCHAR(32)", "NULL"));
 		guilds.addColumn(new Column("group_roles", "TEXT", null));
@@ -60,9 +66,29 @@ public class Data {
 				sb.setup();
 			}
 		}
-		bot.update();
-		users.update();
-		guilds.update();
+		for (ArrayList<DynamicTable> tableList : tables.values()) {
+			for (DynamicTable table : tableList) {
+				table.update();
+			}
+		}
+	}
+
+	public static void addTable(Plugin plugin, DynamicTable table) {
+		ArrayList<DynamicTable> tableList = tables.get(plugin);
+		if (tableList == null) {
+			tableList = new ArrayList<DynamicTable>();
+			tables.put(plugin, tableList);
+		}
+		tableList.add(table);
+	}
+
+	public static void removeTables(Plugin plugin) {
+		ArrayList<DynamicTable> tableList = tables.remove(plugin);
+		if (tableList != null) {
+			for (DynamicTable table : tableList) {
+				table.shutdown();
+			}
+		}
 	}
 
 	public static void shutdown() {
@@ -70,9 +96,11 @@ public class Data {
 	}
 
 	public static void migrate(Backend from, Backend to) {
-		bot.migrateBackends(from, to);
-		users.migrateBackends(from, to);
-		guilds.migrateBackends(from, to);
+		for (ArrayList<DynamicTable> tableList : tables.values()) {
+			for (DynamicTable table : tableList) {
+				table.migrateBackends(from, to);
+			}
+		}
 	}
 
 	public static void setRolePermission(long guildId, long roleId, PermissionGroup permission) {
@@ -93,7 +121,7 @@ public class Data {
 		}
 		return guildMap.getKey(roleId);
 	}
-	
+
 	public static DualHashBidiMap<PermissionGroup, Long> getGuildRoles(long guildId) {
 		if (roleCache.size() == 0)
 			getGuildInfo();

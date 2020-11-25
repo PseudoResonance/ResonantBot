@@ -13,6 +13,7 @@ import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.simpleyaml.configuration.file.YamlConfiguration;
 
 import com.github.pseudoresonance.resonantbot.api.Plugin;
+import com.github.pseudoresonance.resonantbot.data.Data;
 import com.github.pseudoresonance.resonantbot.language.LanguageManager;
 
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -120,6 +121,7 @@ public class PluginManager {
 		}
 		if (plugin != null) {
 			File f = plugins.getKey(plugin);
+			Data.removeTables(plugin);
 			CommandManager.unregisterPluginCommands(plugin);
 			PluginFileLoader.disablePlugin(plugin);
 			pluginNames.remove(plugin.getName());

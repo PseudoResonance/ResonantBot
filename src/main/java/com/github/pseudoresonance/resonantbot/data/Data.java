@@ -54,7 +54,7 @@ public class Data {
 		guilds.setup();
 		addTable(null, guilds);
 		guilds.addColumn(new Column("language", "VARCHAR(8)", "en-US"));
-		guilds.addColumn(new Column("prefix", "VARCHAR(32)", "NULL"));
+		guilds.addColumn(new Column("prefix", "VARCHAR(32)", null));
 		guilds.addColumn(new Column("group_roles", "TEXT", null));
 	}
 

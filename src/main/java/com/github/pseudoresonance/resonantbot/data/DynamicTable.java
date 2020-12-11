@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 
 import com.github.pseudoresonance.resonantbot.Config;
 import com.github.pseudoresonance.resonantbot.ResonantBot;
+import com.github.pseudoresonance.resonantbot.api.Utils;
 
 public class DynamicTable {
 	
@@ -193,11 +194,8 @@ public class DynamicTable {
 								String defaultValue = col.getDefaultValue();
 								if (defaultValue == null)
 									defaultValue = "";
-								else {
-									if (!defaultValue.equalsIgnoreCase("NULL"))
-										defaultValue = "'NULL'";
-									defaultValue = " DEFAULT " + defaultValue;
-								}
+								else
+									defaultValue = " DEFAULT " + Utils.escapeSql(defaultValue, true);
 								try {
 									st.execute("ALTER TABLE `" + sb.getPrefix() + name + "` ADD " + key + " " + value + defaultValue + ";");
 								} catch (SQLException e) {
@@ -427,7 +425,7 @@ public class DynamicTable {
 			return temp;
 		else {
 			temp = get(id);
-			temp.put(id, temp);
+			data.put(id, temp);
 			return temp;
 		}
 	}
